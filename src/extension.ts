@@ -8,6 +8,7 @@ import * as vscode from 'vscode'
 import { createPost, fetchPosts, publishPost, updatePost } from './lib/posts'
 // Add these new imports
 import { PostsProvider } from './postsProvider'
+
 import { Post, PostSchema } from './types'
 import { PostCommands } from './commands/PostCommands'
 
@@ -34,7 +35,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Add this new code to create and register the TreeDataProvider
 	const postsProvider = new PostsProvider()
-	vscode.window.registerTreeDataProvider('courseBuilderPosts', postsProvider)
+
+	vscode.window.registerTreeDataProvider('posts', postsProvider)
 
 	// Add a command to refresh the posts list
 	const refreshPostsDisposable = vscode.commands.registerCommand(
