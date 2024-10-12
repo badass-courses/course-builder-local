@@ -1,71 +1,51 @@
-# course-builder-local README
+# Course Builder Local
 
-This is the README for your extension "course-builder-local". After writing up a brief description, we recommend including the following sections.
+Course Builder Local is a powerful VS Code extension designed to streamline the process of creating and managing content for your Course Builder site.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Edit posts and pages directly within VS Code
+- Publish content to your Course Builder site with a single click
+- Preview your content locally before publishing
+- Manage course structure and organization
+- Synchronize local changes with your remote Course Builder site
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+To use this extension, you need:
 
-## Extension Settings
+1. A valid Course Builder site
+2. VS Code version 1.60.0 or higher
+3. An active internet connection for publishing and syncing
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Installation
 
-For example:
+1. Open VS Code
+2. Go to the Extensions view (Ctrl+Shift+X)
+3. Search for "Course Builder Local"
+4. Click Install
 
-This extension contributes the following settings:
+## Getting Started
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+1. Open your course content folder in VS Code
+2. Use the Course Builder Local panel to connect to your site
+3. Start editing and publishing your course content!
 
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
+For detailed instructions, please refer to our [documentation](https://link-to-your-documentation.com).
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
+- Initial release of Course Builder Local
+- Basic editing and publishing functionality
+- Local preview feature
+- Course structure management
 
-Initial release of ...
+## Feedback and Support
 
-### 1.0.1
+If you encounter any issues or have suggestions for improvements, please [file an issue](https://link-to-your-issue-tracker.com) on our GitHub repository.
 
-Fixed issue #.
+## License
 
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+This extension is released under the [MIT License](https://opensource.org/licenses/MIT).
