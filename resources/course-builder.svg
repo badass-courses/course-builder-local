@@ -1,0 +1,16 @@
+<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="currentColor" stroke-width="2">
+    <!-- Skull -->
+    <path d="M4,12 C4,6 8,2 12,2 C16,2 20,6 20,12 C20,16 18,18 16,20 L8,20 C6,18 4,16 4,12 Z" />
+    
+    <!-- Eyes -->
+    <circle cx="9" cy="10" r="2" />
+    <circle cx="15" cy="10" r="2" />
+    
+    <!-- Nose -->
+    <path d="M12,13 L12,15" />
+    
+    <!-- Teeth -->
+    <path d="M8,20 L10,17 L14,17 L16,20" />
+  </g>
+</svg>
