@@ -26,6 +26,10 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 			title: 'Edit Post',
 			arguments: [element],
 		}
+
+		// Add the status as a label
+		treeItem.description = element.fields.state
+
 		return treeItem
 	}
 
