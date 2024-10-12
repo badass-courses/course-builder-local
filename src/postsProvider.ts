@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { fetchPosts } from './extension'
 import { Post } from './types'
+import { fetchPosts } from './lib/posts'
 
 export class PostsProvider implements vscode.TreeDataProvider<Post> {
 	private _onDidChangeTreeData: vscode.EventEmitter<
