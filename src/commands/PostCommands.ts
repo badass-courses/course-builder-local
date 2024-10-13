@@ -6,6 +6,7 @@ import * as path from 'path'
 import { createPost, fetchPosts, publishPost, updatePost } from '../lib/posts'
 import { PostsProvider } from '../postsProvider'
 import { Post } from '../types'
+import { getAuthenticatedClient } from '../auth'
 
 export class PostCommands {
 	public static async createAndEditPost(postsProvider?: PostsProvider) {
@@ -86,13 +87,18 @@ export class PostCommands {
 		}
 	}
 
-	public static async loadAndEditPost(postOrUndefined?: Post) {
+	public static async loadAndEditPost(
+		context: vscode.ExtensionContext,
+		postOrUndefined?: Post,
+	) {
 		try {
 			let post: Post
 
 			if (postOrUndefined) {
 				post = postOrUndefined
 			} else {
+				const client = await getAuthenticatedClient(context)
+				console.log({ client })
 				const posts = await fetchPosts()
 				const items = posts.map((p: Post) => ({
 					label: p.fields.title,
@@ -125,7 +131,8 @@ export class PostCommands {
 					if (savedDocument.uri.fsPath === tmpFile) {
 						const updatedBody = savedDocument.getText()
 
-						const updatedPost = await updatePost({
+						const client = await getAuthenticatedClient(context)
+						const updatedPost = await updatePost(client, {
 							id: post.id,
 							fields: { title: post.fields.title, body: updatedBody },
 						})
