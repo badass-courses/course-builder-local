@@ -1,22 +1,38 @@
+import { getBaseUrl } from '../config'
 import { Post, PostSchema } from '../types'
+import * as vscode from 'vscode'
+
+const baseUrl = getBaseUrl()
+const apiUrl = `${baseUrl}/api`
 
 // Update the fetchPosts function to be exported and reusable
-export async function fetchPosts(): Promise<Post[]> {
-	const response = await fetch('https://joel-x42.coursebuilder.dev/api/posts')
+export async function fetchPosts(token?: string): Promise<Post[]> {
+	console.log('fetchPosts')
+	const response = await fetch(`${apiUrl}/posts`, {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	})
 	if (!response.ok) {
+		console.error(`Failed to fetch posts: ${response.statusText}`)
 		throw new Error(`Failed to fetch posts: ${response.statusText}`)
 	}
 	return response.ok ? PostSchema.array().parse(await response.json()) : []
 }
 
-export async function updatePost(post: {
-	id: string
-	fields: { title: string; body: string }
-}): Promise<Post> {
-	const response = await fetch(`https://joel-x42.coursebuilder.dev/api/posts`, {
+export async function updatePost(
+	post: {
+		id: string
+		fields: { title: string; body: string }
+	},
+	token: string | null,
+): Promise<Post> {
+	const response = await fetch(`${apiUrl}/posts`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
 		},
 		body: JSON.stringify(post),
 	})
@@ -28,11 +44,15 @@ export async function updatePost(post: {
 	return PostSchema.parse(await response.json())
 }
 
-export async function createPost(title: string): Promise<Post> {
-	const response = await fetch('https://joel-x42.coursebuilder.dev/api/posts', {
+export async function createPost(
+	title: string,
+	token: string | null,
+): Promise<Post> {
+	const response = await fetch(`${apiUrl}/posts`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
 		},
 		body: JSON.stringify({ title }),
 	})
@@ -44,11 +64,15 @@ export async function createPost(title: string): Promise<Post> {
 	return PostSchema.parse(await response.json())
 }
 
-export async function publishPost(post: Post): Promise<Post> {
-	const response = await fetch(`https://joel-x42.coursebuilder.dev/api/posts`, {
+export async function publishPost(
+	post: Post,
+	token: string | null,
+): Promise<Post> {
+	const response = await fetch(`${apiUrl}/posts`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
 		},
 		body: JSON.stringify({
 			id: post.id,

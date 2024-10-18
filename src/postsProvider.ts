@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 import { Post } from './types'
 import { fetchPosts } from './lib/posts'
+import { type TokenSet } from 'openid-client'
+import { extensionEvents } from './lib/eventEmitter'
 
 export class PostsProvider implements vscode.TreeDataProvider<Post> {
 	private _onDidChangeTreeData: vscode.EventEmitter<
@@ -12,6 +14,17 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire()
+	}
+
+	context: vscode.ExtensionContext
+
+	constructor(private context: vscode.ExtensionContext) {
+		this.context = context
+
+		extensionEvents.on('post:updated', () => this.refresh())
+		extensionEvents.on('post:created', () => this.refresh())
+		extensionEvents.on('post:published', () => this.refresh())
+		extensionEvents.on('posts:refresh', () => this.refresh())
 	}
 
 	getTreeItem(element: Post): vscode.TreeItem {
@@ -38,8 +51,12 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 			return []
 		} else {
 			try {
-				return await fetchPosts()
+				const storedTokenSet = this.context.globalState.get('tokenSet') as
+					| TokenSet
+					| undefined
+				return await fetchPosts(storedTokenSet?.access_token)
 			} catch (error) {
+				console.log('Failed to fetch posts:', error)
 				vscode.window.showErrorMessage('Failed to fetch posts')
 				return []
 			}

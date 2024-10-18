@@ -11,7 +11,9 @@
 	"categories": [
 		"Other"
 	],
-	"activationEvents": [],
+	"activationEvents": [
+		"onFileSystem:builder"
+	],
 	"main": "./dist/extension.js",
 	"contributes": {
 		"commands": [
@@ -75,7 +77,18 @@
 					"icon": "resources/course-builder.svg"
 				}
 			]
-		}
+		},
+		"resourceLabelFormatters": [
+			{
+				"scheme": "builder",
+				"formatting": {
+					"label": "${path}",
+					"separator": "/",
+					"tildify": true,
+					"workspaceSuffix": "Course Builder"
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
@@ -106,10 +119,13 @@
 		"typescript": "^5.6.2"
 	},
 	"dependencies": {
+		"@epic-web/remember": "^1.1.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
+		"gray-matter": "^4.0.3",
 		"openid-client": "^5.7.0",
 		"prettier": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.8",
+		"vscode-uri": "^3.0.8",
 		"zod": "^3.23.8"
 	}
 }

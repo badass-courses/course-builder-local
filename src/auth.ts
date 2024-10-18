@@ -1,14 +1,17 @@
 import * as vscode from 'vscode'
 import { Issuer, Client, TokenSet } from 'openid-client'
 import { getErrorMessage } from './misc' // You'll need to implement this function
+import { getBaseUrl } from './config'
 
-const ISSUER_URL = 'https://joel-x42.coursebuilder.dev/oauth'
+const baseUrl = getBaseUrl()
+const ISSUER_URL = `${baseUrl}/oauth`
 const GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:device_code'
 
 export async function authenticate(
 	context: vscode.ExtensionContext,
 ): Promise<Client> {
 	try {
+		console.log('Authenticating...')
 		// Check if we already have a valid token
 		const storedTokenSet = context.globalState.get('tokenSet') as
 			| TokenSet
@@ -49,6 +52,8 @@ export async function authenticate(
 
 			const userinfo = await client.userinfo(tokenSet)
 			context.globalState.update('userInfo', userinfo)
+
+			console.log({ userinfo })
 
 			vscode.window.showInformationMessage('Authentication successful!')
 			return client

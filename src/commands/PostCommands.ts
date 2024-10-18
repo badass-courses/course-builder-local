@@ -1,16 +1,49 @@
 import * as vscode from 'vscode'
-import * as fs from 'fs'
-import * as os from 'os'
-import * as path from 'path'
+import matter from 'gray-matter'
+import { URI } from 'vscode-uri'
 
 import { createPost, fetchPosts, publishPost, updatePost } from '../lib/posts'
 import { PostsProvider } from '../postsProvider'
 import { Post } from '../types'
 import { getAuthenticatedClient } from '../auth'
+import { tokenForContext } from '../lib/token-for-context'
+import { TEMP_SCHEME } from '../config'
+import { extensionEvents } from '../lib/eventEmitter'
 
 export class PostCommands {
-	public static async createAndEditPost(postsProvider?: PostsProvider) {
+	private static createFrontmatter(post: Post): string {
+		return matter.stringify('', {
+			title: post.fields.title,
+		})
+	}
+
+	private static parseContent(content: string): { data: any; content: string } {
+		return matter(content)
+	}
+
+	private static createTempUri(slug: string): vscode.Uri {
+		const uri = vscode.Uri.parse(`${TEMP_SCHEME}:/${slug}.mdx`)
+		console.log('Created temp URI:', uri.toString())
+		return uri
+	}
+
+	private static async openTempDocument(
+		uri: vscode.Uri,
+		content: string,
+	): Promise<vscode.TextDocument> {
+		console.log('Opening temp document:', uri.toString())
+		const encoder = new TextEncoder()
+		await vscode.workspace.fs.writeFile(uri, encoder.encode(content))
+		console.log('Wrote content to temp file')
+		const document = await vscode.workspace.openTextDocument(uri)
+		console.log('Opened temp document')
+		return document
+	}
+
+	public static async createAndEditPost(postsProvider: PostsProvider) {
+		console.log('Starting createAndEditPost')
 		try {
+			const token = tokenForContext(postsProvider.context)
 			// Prompt for the new post title
 			const title = await vscode.window.showInputBox({
 				prompt: 'Enter the title for the new post',
@@ -28,44 +61,56 @@ export class PostCommands {
 			}
 
 			// Create the new post
-			const newPost = await createPost(title)
+			const newPost = await createPost(title, token)
+			extensionEvents.emit('post:created', newPost)
 
-			// Create a temporary file for editing the body
-			const tmpDir =
-				vscode.workspace.workspaceFolders?.[0].uri.fsPath || os.tmpdir()
-			const tmpFile = path.join(tmpDir, `${newPost.fields.slug}.mdx`)
+			console.log('Created new post:', newPost)
+			const tempUri = this.createTempUri(newPost.fields.slug)
+			console.log('Creating temp file at URI:', tempUri.toString())
+			const content =
+				this.createFrontmatter(newPost) + (newPost.fields.body || '')
 
-			// Write the current body (if any) to the temporary file
-			fs.writeFileSync(tmpFile, newPost.fields.body || '')
-
-			// Open the temporary file in the editor
-			const document = await vscode.workspace.openTextDocument(tmpFile)
+			console.log('Opening temp document')
+			const document = await this.openTempDocument(tempUri, content)
+			console.log('Showing text document')
 			await vscode.window.showTextDocument(document)
+			console.log('Text document shown')
 
 			// Register a save listener for this document
 			const saveDisposable = vscode.workspace.onDidSaveTextDocument(
 				async (savedDocument) => {
-					if (savedDocument.uri.fsPath === tmpFile) {
-						const updatedBody = savedDocument.getText()
+					if (savedDocument.uri.toString() === tempUri.toString()) {
+						const updatedContent = savedDocument.getText()
+						const { data, content: updatedBody } =
+							this.parseContent(updatedContent)
 
-						const updatedPost = await updatePost({
-							id: newPost.id,
-							fields: { title: newPost.fields.title, body: updatedBody },
-						})
+						const updatedPost = await updatePost(
+							{
+								id: newPost.id,
+								fields: {
+									title: data.title || newPost.fields.title,
+									body: updatedBody,
+								},
+							},
+							token,
+						)
 
-						if (!updatedPost) {
-							throw new Error(`Failed to update post.`)
+						if (updatedPost) {
+							extensionEvents.emit('post:updated', updatedPost)
 						}
 
 						vscode.window.showInformationMessage(
-							`Post updated: ${newPost.fields.title}`,
+							`Post updated: ${updatedPost.fields.title}`,
 						)
+
+						// Refresh the posts provider
+						postsProvider.refresh()
 
 						// Close the document and delete the temporary file
 						await vscode.commands.executeCommand(
 							'workbench.action.closeActiveEditor',
 						)
-						fs.unlinkSync(tmpFile)
+						await vscode.workspace.fs.delete(tempUri)
 
 						// Dispose of the save listener
 						saveDisposable.dispose()
@@ -79,19 +124,21 @@ export class PostCommands {
 			)
 
 			// Refresh the tree view if postsProvider is provided
-			if (postsProvider) {
-				postsProvider.refresh()
-			}
+			postsProvider.refresh()
 		} catch (error: any) {
+			console.error('Error in createAndEditPost:', error)
 			vscode.window.showErrorMessage(`Error: ${error.message}`)
 		}
 	}
 
 	public static async loadAndEditPost(
 		context: vscode.ExtensionContext,
+		postsProvider: PostsProvider,
 		postOrUndefined?: Post,
 	) {
+		console.log({ postOrUndefined })
 		try {
+			const token = tokenForContext(context)
 			let post: Post
 
 			if (postOrUndefined) {
@@ -99,6 +146,7 @@ export class PostCommands {
 			} else {
 				const client = await getAuthenticatedClient(context)
 				console.log({ client })
+
 				const posts = await fetchPosts()
 				const items = posts.map((p: Post) => ({
 					label: p.fields.title,
@@ -117,44 +165,78 @@ export class PostCommands {
 				post = selected.post
 			}
 
-			const tmpDir =
-				vscode.workspace.workspaceFolders?.[0].uri.fsPath || os.tmpdir()
-			const tmpFile = path.join(tmpDir, `${post.fields.slug}.mdx`)
+			const tempUri = this.createTempUri(post.fields.slug)
+			const content = this.createFrontmatter(post) + (post.fields.body || '')
 
-			fs.writeFileSync(tmpFile, post.fields.body || '')
-
-			const document = await vscode.workspace.openTextDocument(tmpFile)
+			const document = await this.openTempDocument(tempUri, content)
 			await vscode.window.showTextDocument(document)
 
 			const saveDisposable = vscode.workspace.onDidSaveTextDocument(
 				async (savedDocument) => {
-					if (savedDocument.uri.fsPath === tmpFile) {
-						const updatedBody = savedDocument.getText()
+					if (savedDocument.uri.toString() === tempUri.toString()) {
+						const updatedContent = savedDocument.getText()
+						const { data, content: updatedBody } =
+							this.parseContent(updatedContent)
 
-						const client = await getAuthenticatedClient(context)
-						const updatedPost = await updatePost(client, {
-							id: post.id,
-							fields: { title: post.fields.title, body: updatedBody },
-						})
-						vscode.window.showInformationMessage(
-							`Post updated: ${post.fields.title}`,
+						const updatedPost = await updatePost(
+							{
+								id: post.id,
+								fields: {
+									title: data.title || post.fields.title,
+									body: updatedBody,
+								},
+							},
+							token,
 						)
+
+						if (updatedPost) {
+							extensionEvents.emit('post:updated', updatedPost)
+						}
+
+						vscode.window.showInformationMessage(
+							`Post updated: ${updatedPost.fields.title}`,
+						)
+						// Refresh the posts provider
+						postsProvider.refresh()
 					}
 				},
 			)
 
 			// Clean up the temporary file when the editor is closed
 			const closeListener = vscode.window.onDidChangeVisibleTextEditors(
-				(editors) => {
-					if (!editors.some((e) => e.document.uri.fsPath === tmpFile)) {
+				async (editors) => {
+					if (
+						!editors.some(
+							(e) => e.document.uri.toString() === tempUri.toString(),
+						)
+					) {
 						saveDisposable.dispose()
 						closeListener.dispose()
-						fs.unlinkSync(tmpFile)
+						await vscode.workspace.fs.delete(tempUri)
 					}
 				},
 			)
 		} catch (error: any) {
 			vscode.window.showErrorMessage(`Error: ${error.message}`)
+		}
+	}
+
+	public static async publishPost(
+		post: Post,
+		context: vscode.ExtensionContext,
+	) {
+		try {
+			const token = tokenForContext(context)
+			await publishPost(post, token)
+			extensionEvents.emit('post:published', post)
+
+			vscode.window.showInformationMessage(
+				`Post published: ${post.fields.title}`,
+			)
+			return true
+		} catch (error: any) {
+			vscode.window.showErrorMessage(`Error publishing post: ${error.message}`)
+			return false
 		}
 	}
 }

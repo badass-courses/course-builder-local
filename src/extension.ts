@@ -1,27 +1,35 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as fs from 'fs'
-import * as os from 'os'
-import * as path from 'path'
-import * as vscode from 'vscode'
-import { Issuer, Client, TokenSet } from 'openid-client'
 
-import { createPost, fetchPosts, publishPost, updatePost } from './lib/posts'
-// Add these new imports
+import * as vscode from 'vscode'
+
 import { PostsProvider } from './postsProvider'
 
-import { Post, PostSchema } from './types'
+import { Post } from './types'
 import { PostCommands } from './commands/PostCommands'
-import { authenticate, getAuthenticatedClient } from './auth'
+import { authenticate } from './auth'
+
+import { TempFileSystemProvider } from './lib/temp-filesystem-provider'
+import { TEMP_SCHEME } from './config'
+import { extensionEvents } from './lib/eventEmitter'
+
+// Create the tempFileSystemProvider as a global variable
+let tempFileSystemProvider: TempFileSystemProvider
+
+// Register the file system provider immediately
+tempFileSystemProvider = new TempFileSystemProvider()
+vscode.workspace.registerFileSystemProvider(
+	TEMP_SCHEME,
+	tempFileSystemProvider,
+	{ isCaseSensitive: true },
+)
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log(
-		'Congratulations, your extension "course-builder-local" is now active;',
-	)
+	console.log('Activating course-builder-local extension')
 
 	// Authenticate the user
 	try {
@@ -36,39 +44,33 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Command to create and edit a new post
 	const createAndEditDisposable = vscode.commands.registerCommand(
 		'course-builder-local.createAndEditPost',
-		PostCommands.createAndEditPost,
+		() => PostCommands.createAndEditPost(postsProvider),
 	)
 
 	// Command to load and edit an existing post
 	const loadAndEditDisposable = vscode.commands.registerCommand(
 		'course-builder-local.loadAndEditPost',
-		(post?: Post) => PostCommands.loadAndEditPost(context, post),
+		(post?: Post) => PostCommands.loadAndEditPost(context, postsProvider, post),
 	)
 
 	// Add this new code to create and register the TreeDataProvider
-	const postsProvider = new PostsProvider()
+	const postsProvider = new PostsProvider(context)
 
 	vscode.window.registerTreeDataProvider('posts', postsProvider)
 
 	// Add a command to refresh the posts list
 	const refreshPostsDisposable = vscode.commands.registerCommand(
 		'course-builder-local.refreshPosts',
-		() => postsProvider.refresh(),
+		() => extensionEvents.emit('posts:refresh'),
 	)
 
-	// Add a command to publish a post
+	// Update the publishPost command
 	const publishPostDisposable = vscode.commands.registerCommand(
 		'course-builder-local.publishPost',
 		async (post: Post) => {
-			try {
-				await publishPost(post)
-
-				vscode.window.showInformationMessage(
-					`Post published: ${post.fields.title}`,
-				)
+			const success = await PostCommands.publishPost(post, context)
+			if (success) {
 				postsProvider.refresh() // Refresh the tree view to update the post state
-			} catch (error: any) {
-				vscode.window.showErrorMessage(`Error: ${error.message}`)
 			}
 		},
 	)
@@ -78,39 +80,24 @@ export async function activate(context: vscode.ExtensionContext) {
 		() => PostCommands.createAndEditPost(postsProvider),
 	)
 
-	// Example of using the authenticated client in a command
-	const exampleAuthenticatedCommand = vscode.commands.registerCommand(
-		'course-builder-local.exampleAuthenticatedCommand',
-		async () => {
-			try {
-				const client = await getAuthenticatedClient(context)
-const storedTokenSet = context.globalState.get('tokenSet') as
-		| TokenSet
-		| undefined
-				console.log(client)
+	// Log all registered commands
+	vscode.commands.getCommands(true).then((commands) => {
+		console.log(
+			'Registered commands:',
+			commands.filter((cmd) => cmd.startsWith('course-builder-local')),
+		)
+	})
 
-				client.userinfo(storedTokenSet).then((response) => {
-					vscode.window.showInformationMessage(`Hello, ${response.name}!`)
-				}
-				// Use the client to make authenticated requests
-				// For example:
-				// const response = await client.userinfo();
-				// vscode.window.showInformationMessage(`Hello, ${response.name}!`);
-			} catch (error) {
-				vscode.window.showErrorMessage(`Error: ${error.message}`)
-			}
-		},
-	)
-
+	// Add all disposables to context.subscriptions
 	context.subscriptions.push(
-		createAndEditDisposable,
 		loadAndEditDisposable,
 		refreshPostsDisposable,
 		publishPostDisposable,
 		createNewPostDisposable,
-		exampleAuthenticatedCommand,
 	)
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+	console.log('Deactivating course-builder-local extension')
+}

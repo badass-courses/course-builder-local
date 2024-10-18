@@ -4,7 +4,7 @@ export const PostSchema = z.object({
 	id: z.string(),
 	fields: z.object({
 		title: z.string(),
-		body: z.string(),
+		body: z.string().nullish(),
 		slug: z.string(),
 		state: z.string().optional(),
 	}),
