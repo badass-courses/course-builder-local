@@ -8,12 +8,13 @@ import { PostsDetailProvider, showPostDetail } from './postsDetailProvider'
 
 import { Post } from './types'
 import { PostCommands } from './commands/PostCommands'
-import { authenticate } from './auth'
+import { authenticate, logout, clearAuth } from './auth'
 
 import { TempFileSystemProvider } from './lib/temp-filesystem-provider'
 import { TEMP_SCHEME } from './config'
 import { extensionEvents } from './lib/eventEmitter'
 import { Extension } from './helpers/Extension'
+import { logger } from './utils/logger'
 
 // Create the tempFileSystemProvider as a global variable
 let tempFileSystemProvider: TempFileSystemProvider
@@ -29,18 +30,26 @@ vscode.workspace.registerFileSystemProvider(
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+	const extension = Extension.getInstance(context)
+
+	// Initialize the logger
+	logger.initialize(context)
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log('Activating course-builder-local extension')
+	logger.info('Activating course-builder-local extension')
 
-	const extension = Extension.getInstance(context)
+	// await clearAuth(context)
 
 	// Authenticate the user
 	try {
+		logger.debug('Attempting to authenticate user...')
 		await authenticate(context)
+		logger.info('User authenticated successfully')
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error'
+		logger.error(`Authentication failed: ${errorMessage}`)
 		vscode.window.showErrorMessage(`Authentication failed: ${errorMessage}`)
 		return // Exit if authentication fails
 	}
@@ -61,10 +70,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	)
 
 	// Create PostsDetailProvider first
+	logger.debug('Creating PostsDetailProvider')
 	const postsDetailProvider = new PostsDetailProvider(context)
 	vscode.window.registerTreeDataProvider('postsDetail', postsDetailProvider)
 
 	// Create PostsProvider with postsDetailProvider
+	logger.debug('Creating PostsProvider')
 	const postsProvider = new PostsProvider(context, postsDetailProvider)
 	vscode.window.registerTreeDataProvider('posts', postsProvider)
 
@@ -89,14 +100,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		'course-builder-local.createNewPost',
 		() => PostCommands.createAndEditPost(postsProvider),
 	)
-
-	// Log all registered commands
-	vscode.commands.getCommands(true).then((commands) => {
-		console.log(
-			'Registered commands:',
-			commands.filter((cmd) => cmd.startsWith('course-builder-local')),
-		)
-	})
 
 	// Add all disposables to context.subscriptions
 	context.subscriptions.push(
@@ -137,9 +140,69 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Add the new disposable to context.subscriptions
 	context.subscriptions.push(selectAndShowPostDetailDisposable)
+
+	// Register the logout command
+	const logoutDisposable = vscode.commands.registerCommand(
+		'course-builder-local.logout',
+		async () => {
+			await logout(context)
+			// After logout, you might want to clear or refresh certain UI elements
+			postsProvider.refresh()
+			postsDetailProvider.refresh()
+		},
+	)
+
+	// Add the logout disposable to context.subscriptions
+	context.subscriptions.push(logoutDisposable)
+
+	// Register the authenticate command
+	const authenticateDisposable = vscode.commands.registerCommand(
+		'course-builder-local.authenticate',
+		async () => {
+			await authenticate(context)
+			postsProvider.refresh()
+		},
+	)
+
+	// Add the authenticate disposable to context.subscriptions
+	context.subscriptions.push(authenticateDisposable)
+
+	// Log all registered commands
+	vscode.commands.getCommands(true).then((commands) => {
+		logger.debug(
+			'Registered commands:',
+			commands.filter((cmd) => cmd.startsWith('course-builder-local')),
+		)
+	})
+
+	logger.info('course-builder-local extension activated successfully')
+
+	const showPostsViewDisposable = vscode.commands.registerCommand(
+		'course-builder-local.showPostsView',
+		() => {
+			vscode.commands.executeCommand('workbench.view.extension.course-builder')
+		},
+	)
+	context.subscriptions.push(showPostsViewDisposable)
+
+	// Register the clearAuth command
+	const clearAuthDisposable = vscode.commands.registerCommand(
+		'course-builder-local.clearAuth',
+		async () => {
+			await clearAuth(context)
+			postsProvider.refresh()
+			postsDetailProvider.refresh()
+		},
+	)
+
+	// Add the clearAuth disposable to context.subscriptions
+	context.subscriptions.push(clearAuthDisposable)
+
+	// At the end of the activate function
+	vscode.commands.executeCommand('course-builder-local.showPostsView')
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {
-	console.log('Deactivating course-builder-local extension')
+	logger.info('Deactivating course-builder-local extension')
 }

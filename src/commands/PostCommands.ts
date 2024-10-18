@@ -9,6 +9,7 @@ import { getAuthenticatedClient } from '../auth'
 import { tokenForContext } from '../lib/token-for-context'
 import { TEMP_SCHEME } from '../config'
 import { extensionEvents } from '../lib/eventEmitter'
+import { logger } from '../utils/logger'
 
 export class PostCommands {
 	private static createFrontmatter(post: Post): string {
@@ -23,7 +24,7 @@ export class PostCommands {
 
 	private static createTempUri(slug: string): vscode.Uri {
 		const uri = vscode.Uri.parse(`${TEMP_SCHEME}:/${slug}.mdx`)
-		console.log('Created temp URI:', uri.toString())
+		logger.debug('Created temp URI:', uri.toString())
 		return uri
 	}
 
@@ -31,17 +32,17 @@ export class PostCommands {
 		uri: vscode.Uri,
 		content: string,
 	): Promise<vscode.TextDocument> {
-		console.log('Opening temp document:', uri.toString())
+		logger.debug('Opening temp document:', uri.toString())
 		const encoder = new TextEncoder()
 		await vscode.workspace.fs.writeFile(uri, encoder.encode(content))
-		console.log('Wrote content to temp file')
+		logger.debug('Wrote content to temp file')
 		const document = await vscode.workspace.openTextDocument(uri)
-		console.log('Opened temp document')
+		logger.debug('Opened temp document')
 		return document
 	}
 
 	public static async createAndEditPost(postsProvider: PostsProvider) {
-		console.log('Starting createAndEditPost')
+		logger.info('Starting createAndEditPost')
 		try {
 			const token = tokenForContext(postsProvider.context)
 			// Prompt for the new post title
@@ -64,17 +65,17 @@ export class PostCommands {
 			const newPost = await createPost(title, token)
 			extensionEvents.emit('post:created', newPost)
 
-			console.log('Created new post:', newPost)
+			logger.info('Created new post:', newPost)
 			const tempUri = this.createTempUri(newPost.fields.slug)
-			console.log('Creating temp file at URI:', tempUri.toString())
+			logger.debug('Creating temp file at URI:', tempUri.toString())
 			const content =
 				this.createFrontmatter(newPost) + (newPost.fields.body || '')
 
-			console.log('Opening temp document')
+			logger.debug('Opening temp document')
 			const document = await this.openTempDocument(tempUri, content)
-			console.log('Showing text document')
+			logger.debug('Showing text document')
 			await vscode.window.showTextDocument(document)
-			console.log('Text document shown')
+			logger.debug('Text document shown')
 
 			// Register a save listener for this document
 			const saveDisposable = vscode.workspace.onDidSaveTextDocument(
@@ -125,7 +126,7 @@ export class PostCommands {
 			// Refresh the tree view if postsProvider is provided
 			postsProvider.refresh()
 		} catch (error: any) {
-			console.error('Error in createAndEditPost:', error)
+			logger.error('Error in createAndEditPost:', error)
 			vscode.window.showErrorMessage(`Error: ${error.message}`)
 		}
 	}
@@ -135,7 +136,6 @@ export class PostCommands {
 		postsProvider: PostsProvider,
 		postOrUndefined?: Post,
 	) {
-		console.log({ postOrUndefined })
 		try {
 			const token = tokenForContext(context)
 			let post: Post
@@ -144,7 +144,6 @@ export class PostCommands {
 				post = postOrUndefined
 			} else {
 				const client = await getAuthenticatedClient(context)
-				console.log({ client })
 
 				const posts = await fetchPosts()
 				const items = posts.map((p: Post) => ({

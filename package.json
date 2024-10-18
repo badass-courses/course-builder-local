@@ -4,7 +4,7 @@
 	"publisher": "badass",
 	"description": "Publish Posts to your Course Builder Site from your IDE",
 	"repository": "https://github.com/badass-courses/course-builder-local",
-	"version": "0.0.4",
+	"version": "0.0.15",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
@@ -46,6 +46,14 @@
 			{
 				"command": "course-builder-local.selectPost",
 				"title": "Select Post"
+			},
+			{
+				"command": "course-builder-local.logout",
+				"title": "Course Builder: Logout"
+			},
+			{
+				"command": "course-builder-local.clearAuth",
+				"title": "Course Builder: Clear Authentication"
 			}
 		],
 		"menus": {
@@ -57,6 +65,16 @@
 				},
 				{
 					"command": "course-builder-local.createNewPost",
+					"when": "view == posts",
+					"group": "navigation"
+				},
+				{
+					"command": "course-builder-local.logout",
+					"when": "view == posts",
+					"group": "navigation"
+				},
+				{
+					"command": "course-builder-local.clearAuth",
 					"when": "view == posts",
 					"group": "navigation"
 				}

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { Issuer, Client, TokenSet } from 'openid-client'
 import { getErrorMessage } from './misc' // You'll need to implement this function
 import { getBaseUrl } from './config'
+import { logger } from './utils/logger'
 
 const baseUrl = getBaseUrl()
 const ISSUER_URL = `${baseUrl}/oauth`
@@ -114,4 +115,30 @@ export async function getAuthenticatedClient(
 		console.error('Failed to refresh token:', error)
 		return authenticate(context)
 	}
+}
+
+export async function logout(context: vscode.ExtensionContext): Promise<void> {
+	// Clear the stored token
+	await context.globalState.update('tokenSet', undefined)
+
+	// Clear any other stored authentication data if necessary
+	// For example, if you're storing a user profile:
+	// await context.globalState.update('userProfile', undefined)
+
+	logger.info('User logged out successfully')
+
+	// Notify the user
+	vscode.window.showInformationMessage('Logged out successfully')
+
+	// Trigger a refresh of the UI components that depend on authentication state
+	vscode.commands.executeCommand('course-builder-local.refreshPosts')
+}
+
+export async function clearAuth(
+	context: vscode.ExtensionContext,
+): Promise<void> {
+	await context.globalState.update('tokenSet', undefined)
+	await context.globalState.update('userInfo', undefined)
+	logger.info('Authentication data cleared')
+	vscode.window.showInformationMessage('Authentication data cleared')
 }

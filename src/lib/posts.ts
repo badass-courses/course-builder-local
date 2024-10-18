@@ -1,24 +1,43 @@
 import { getBaseUrl } from '../config'
 import { Post, PostSchema } from '../types'
 import * as vscode from 'vscode'
+import { logger } from '../utils/logger'
 
 const baseUrl = getBaseUrl()
 const apiUrl = `${baseUrl}/api`
 
 // Update the fetchPosts function to be exported and reusable
 export async function fetchPosts(token?: string): Promise<Post[]> {
-	console.log('fetchPosts')
-	const response = await fetch(`${apiUrl}/posts`, {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-		},
-	})
-	if (!response.ok) {
-		console.error(`Failed to fetch posts: ${response.statusText}`)
-		throw new Error(`Failed to fetch posts: ${response.statusText}`)
+	logger.debug('Fetching posts...')
+	const url = `${baseUrl}/api/posts`
+	logger.debug('Fetch URL:', url)
+
+	try {
+		logger.debug(
+			'Making fetch request with token:',
+			token ? 'exists' : 'does not exist',
+		)
+		const response = await fetch(url, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		logger.debug('Fetch response status:', response.status)
+
+		if (!response.ok) {
+			logger.error('Failed to fetch posts. Status:', response.status)
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
+
+		const data = await response.json()
+		logger.debug('Fetched posts data:', data)
+
+		return data
+	} catch (error) {
+		logger.error('Error fetching posts:', error)
+		throw error
 	}
-	return response.ok ? PostSchema.array().parse(await response.json()) : []
 }
 
 export async function updatePost(

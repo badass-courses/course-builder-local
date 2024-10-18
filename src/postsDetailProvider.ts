@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { Post } from './types'
 import { Extension } from './helpers/Extension'
 import { getWebviewJsFiles } from './utils/getWebviewJsFiles'
+import { logger } from './utils/logger'
 
 export class PostsDetailProvider implements vscode.TreeDataProvider<Post> {
 	private _onDidChangeTreeData: vscode.EventEmitter<
@@ -83,18 +84,15 @@ async function getWebviewContent(
 
 	let scriptUris = []
 
-	console.log('isProd', isProd)
+	logger.debug('isProd', isProd)
 
 	if (isProd) {
 		scriptUris = await getWebviewJsFiles('dashboard', webView)
 	} else {
-		console.log('localServerUrl', `http://${localServerUrl}/${webviewFile}`)
 		scriptUris.push(`http://${localServerUrl}/${webviewFile}`)
 	}
-	// Create a URI for the main script
-	// const scriptUri = webView.asWebviewUri(
-	// 	vscode.Uri.parse(`${localServerUrl}/dashboard.js`),
-	// )
+
+	logger.debug('scriptUris', scriptUris)
 
 	return `<!DOCTYPE html>
 	<html lang="en">
