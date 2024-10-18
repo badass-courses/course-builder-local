@@ -4,6 +4,7 @@
 import * as vscode from 'vscode'
 
 import { PostsProvider } from './postsProvider'
+import { PostsDetailProvider, showPostDetail } from './postsDetailProvider'
 
 import { Post } from './types'
 import { PostCommands } from './commands/PostCommands'
@@ -12,6 +13,7 @@ import { authenticate } from './auth'
 import { TempFileSystemProvider } from './lib/temp-filesystem-provider'
 import { TEMP_SCHEME } from './config'
 import { extensionEvents } from './lib/eventEmitter'
+import { Extension } from './helpers/Extension'
 
 // Create the tempFileSystemProvider as a global variable
 let tempFileSystemProvider: TempFileSystemProvider
@@ -30,6 +32,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Activating course-builder-local extension')
+
+	const extension = Extension.getInstance(context)
 
 	// Authenticate the user
 	try {
@@ -50,12 +54,18 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Command to load and edit an existing post
 	const loadAndEditDisposable = vscode.commands.registerCommand(
 		'course-builder-local.loadAndEditPost',
-		(post?: Post) => PostCommands.loadAndEditPost(context, postsProvider, post),
+		(post?: Post) => {
+			PostCommands.loadAndEditPost(context, postsProvider, post)
+			postsDetailProvider.refresh(post)
+		},
 	)
 
-	// Add this new code to create and register the TreeDataProvider
-	const postsProvider = new PostsProvider(context)
+	// Create PostsDetailProvider first
+	const postsDetailProvider = new PostsDetailProvider(context)
+	vscode.window.registerTreeDataProvider('postsDetail', postsDetailProvider)
 
+	// Create PostsProvider with postsDetailProvider
+	const postsProvider = new PostsProvider(context, postsDetailProvider)
 	vscode.window.registerTreeDataProvider('posts', postsProvider)
 
 	// Add a command to refresh the posts list
@@ -95,6 +105,38 @@ export async function activate(context: vscode.ExtensionContext) {
 		publishPostDisposable,
 		createNewPostDisposable,
 	)
+
+	// Register the selectPost command
+	const selectPostDisposable = vscode.commands.registerCommand(
+		'course-builder-local.selectPost',
+		(post: Post) => {
+			postsDetailProvider.refresh(post)
+		},
+	)
+
+	// Add the new disposable to context.subscriptions
+	context.subscriptions.push(selectPostDisposable)
+
+	// Register the showPostDetail command
+	const showPostDetailDisposable = vscode.commands.registerCommand(
+		'course-builder-local.showPostDetail',
+		(post: Post) => showPostDetail(post, context),
+	)
+
+	// Add the new disposable to context.subscriptions
+	context.subscriptions.push(showPostDetailDisposable)
+
+	// Register the combined selectAndShowPostDetail command
+	const selectAndShowPostDetailDisposable = vscode.commands.registerCommand(
+		'course-builder-local.selectAndShowPostDetail',
+		(post: Post) => {
+			postsDetailProvider.refresh(post)
+			showPostDetail(post, context)
+		},
+	)
+
+	// Add the new disposable to context.subscriptions
+	context.subscriptions.push(selectAndShowPostDetailDisposable)
 }
 
 // This method is called when your extension is deactivated

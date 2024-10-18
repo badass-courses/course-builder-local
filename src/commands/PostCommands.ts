@@ -106,11 +106,10 @@ export class PostCommands {
 						// Refresh the posts provider
 						postsProvider.refresh()
 
-						// Close the document and delete the temporary file
+						// Close the document the temporary file
 						await vscode.commands.executeCommand(
 							'workbench.action.closeActiveEditor',
 						)
-						await vscode.workspace.fs.delete(tempUri)
 
 						// Dispose of the save listener
 						saveDisposable.dispose()
@@ -212,7 +211,6 @@ export class PostCommands {
 					) {
 						saveDisposable.dispose()
 						closeListener.dispose()
-						await vscode.workspace.fs.delete(tempUri)
 					}
 				},
 			)

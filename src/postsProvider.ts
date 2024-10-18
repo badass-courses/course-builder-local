@@ -4,6 +4,7 @@ import { Post } from './types'
 import { fetchPosts } from './lib/posts'
 import { type TokenSet } from 'openid-client'
 import { extensionEvents } from './lib/eventEmitter'
+import { PostsDetailProvider } from './postsDetailProvider'
 
 export class PostsProvider implements vscode.TreeDataProvider<Post> {
 	private _onDidChangeTreeData: vscode.EventEmitter<
@@ -12,19 +13,23 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 	readonly onDidChangeTreeData: vscode.Event<Post | undefined | null | void> =
 		this._onDidChangeTreeData.event
 
-	refresh(): void {
-		this._onDidChangeTreeData.fire()
-	}
-
 	context: vscode.ExtensionContext
+	postsDetailProvider: PostsDetailProvider
 
-	constructor(private context: vscode.ExtensionContext) {
+	constructor(
+		context: vscode.ExtensionContext,
+		postsDetailProvider: PostsDetailProvider,
+	) {
 		this.context = context
-
+		this.postsDetailProvider = postsDetailProvider
 		extensionEvents.on('post:updated', () => this.refresh())
 		extensionEvents.on('post:created', () => this.refresh())
 		extensionEvents.on('post:published', () => this.refresh())
 		extensionEvents.on('posts:refresh', () => this.refresh())
+	}
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire()
 	}
 
 	getTreeItem(element: Post): vscode.TreeItem {

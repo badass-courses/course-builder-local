@@ -1,10 +1,10 @@
 {
 	"name": "course-builder-local",
-	"displayName": "course-builder-local",
+	"displayName": "Course Builder",
 	"publisher": "badass",
 	"description": "Publish Posts to your Course Builder Site from your IDE",
 	"repository": "https://github.com/badass-courses/course-builder-local",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
@@ -38,6 +38,14 @@
 				"command": "course-builder-local.createNewPost",
 				"title": "Create New Post",
 				"icon": "$(add)"
+			},
+			{
+				"command": "course-builder-local.showPostDetail",
+				"title": "Show Post Detail"
+			},
+			{
+				"command": "course-builder-local.selectPost",
+				"title": "Select Post"
 			}
 		],
 		"menus": {
@@ -66,6 +74,10 @@
 				{
 					"id": "posts",
 					"name": "Posts"
+				},
+				{
+					"id": "postsDetail",
+					"name": "Post Details"
 				}
 			]
 		},
@@ -91,19 +103,24 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run package",
+		"vscode:prepublish": "npm run clean && npm run package ",
 		"compile": "npm run check-types && npm run lint && node esbuild.js",
 		"watch": "npm-run-all -p watch:*",
 		"watch:esbuild": "node esbuild.js --watch",
+		"watch:dashboard": "node esbuild.dashboard.js --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-		"package": "npm run check-types && npm run lint && node esbuild.js --production",
+		"package": "npm run check-types && npm run lint && npm-run-all --parallel prod:*",
+		"dev:dashboard": "npm run clean && node esbuild.dashboard.js --sourcemap",
+		"prod:extension": "NODE_ENV=production node esbuild.js --sourcemap",
+		"prod:dashboard": "NODE_ENV=production node esbuild.dashboard.js --sourcemap",
 		"compile-tests": "tsc -p . --outDir out",
 		"watch-tests": "tsc -p . -w --outDir out",
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
 		"check-types": "tsc --noEmit",
 		"lint": "eslint src",
 		"test": "vscode-test",
-		"prettier": "prettier --write ./src"
+		"prettier": "prettier --write ./src",
+		"clean": "rimraf ./dist"
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.8",
@@ -121,10 +138,17 @@
 	"dependencies": {
 		"@epic-web/remember": "^1.1.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
+		"@types/react": "^18.3.11",
+		"@types/react-dom": "^18.3.1",
+		"esbuild": "^0.17.0",
+		"esbuild-server": "^0.3.0",
 		"gray-matter": "^4.0.3",
 		"openid-client": "^5.7.0",
 		"prettier": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.8",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"rimraf": "^6.0.1",
 		"vscode-uri": "^3.0.8",
 		"zod": "^3.23.8"
 	}
