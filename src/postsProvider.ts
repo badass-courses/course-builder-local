@@ -16,11 +16,7 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 		this._onDidChangeTreeData.fire()
 	}
 
-	context: vscode.ExtensionContext
-
-	constructor(private context: vscode.ExtensionContext) {
-		this.context = context
-
+	constructor(public context: vscode.ExtensionContext) {
 		extensionEvents.on('post:updated', () => this.refresh())
 		extensionEvents.on('post:created', () => this.refresh())
 		extensionEvents.on('post:published', () => this.refresh())

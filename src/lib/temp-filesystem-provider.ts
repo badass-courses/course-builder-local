@@ -44,7 +44,7 @@ export class TempFileSystemProvider implements vscode.FileSystemProvider {
 				size: stats.size,
 			}
 		} catch (error) {
-			if (error.code === 'ENOENT') {
+			if (error instanceof Error && error.message.includes('ENOENT')) {
 				throw vscode.FileSystemError.FileNotFound(uri)
 			}
 			throw error
