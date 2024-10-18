@@ -6,6 +6,7 @@ import { type TokenSet } from 'openid-client'
 import { extensionEvents } from './lib/eventEmitter'
 import { PostsDetailProvider } from './postsDetailProvider'
 import { logger } from './utils/logger'
+import { TEMP_SCHEME } from './config'
 
 export class PostsProvider implements vscode.TreeDataProvider<Post> {
 	private _onDidChangeTreeData: vscode.EventEmitter<
@@ -35,7 +36,27 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 
 	refresh(): void {
 		logger.debug('PostsProvider refresh called')
-		this._onDidChangeTreeData.fire(undefined)
+		// Clear the cache when manually refreshing
+		const tempUri = vscode.Uri.parse(`${TEMP_SCHEME}:/`)
+		vscode.workspace.fs
+			.readDirectory(tempUri)
+			.then((files) => {
+				files.forEach(([name, type]) => {
+					if (
+						type === vscode.FileType.File &&
+						(name.endsWith('.mdx') || name === 'posts.json')
+					) {
+						vscode.workspace.fs.delete(
+							vscode.Uri.parse(`${TEMP_SCHEME}:/${name}`),
+						)
+					}
+				})
+				this._onDidChangeTreeData.fire(undefined)
+			})
+			.catch((error) => {
+				logger.warn('Failed to clear cached posts:', error)
+				this._onDidChangeTreeData.fire(undefined)
+			})
 	}
 
 	getTreeItem(element: Post): vscode.TreeItem {
@@ -93,8 +114,11 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 				}
 
 				logger.debug('Fetching posts...')
-				const posts = await fetchPosts(storedTokenSet.access_token)
-				logger.info(`Fetched ${posts.length} posts`)
+				const { posts, source } = await fetchPosts(
+					storedTokenSet.access_token,
+					this.context,
+				)
+				logger.info(`Fetched ${posts.length} posts from ${source}`)
 
 				if (posts.length === 0) {
 					logger.warn('No posts fetched')
@@ -102,10 +126,18 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 					logger.debug('First post:', posts[0])
 				}
 
+				if (source === 'cache') {
+					// If posts were loaded from cache, trigger a refresh to fetch from API
+					setImmediate(() => this._onDidChangeTreeData.fire(undefined))
+				}
+
 				return posts
 			} catch (error) {
 				logger.error('Failed to fetch posts:', error)
-				vscode.window.showErrorMessage('Failed to fetch posts')
+				vscode.window.showErrorMessage(
+					'Failed to fetch posts. Working with cached data if available.',
+				)
+
 				return []
 			}
 		}

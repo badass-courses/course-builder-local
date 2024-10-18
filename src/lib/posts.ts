@@ -2,41 +2,98 @@ import { getBaseUrl } from '../config'
 import { Post, PostSchema } from '../types'
 import * as vscode from 'vscode'
 import { logger } from '../utils/logger'
+import { TEMP_SCHEME } from '../config'
+import matter from 'gray-matter'
 
 const baseUrl = getBaseUrl()
 const apiUrl = `${baseUrl}/api`
+const POSTS_JSON_FILE = 'posts.json'
 
-// Update the fetchPosts function to be exported and reusable
-export async function fetchPosts(token?: string): Promise<Post[]> {
+export async function fetchPosts(
+	token?: string | null,
+	context?: vscode.ExtensionContext,
+): Promise<{ posts: Post[]; source: 'cache' | 'api' }> {
 	logger.debug('Fetching posts...')
+
+	// First, try to load cached posts from JSON
+	if (context) {
+		const cachedPosts = await loadCachedPostsFromJson(context)
+		if (cachedPosts.length > 0) {
+			logger.info('Loaded posts from cached JSON file')
+			// Return cached posts immediately, but continue fetching from API
+			fetchFromApiAndCache(token, context).catch((error) => {
+				logger.error('Error fetching posts from API:', error)
+			})
+			return { posts: cachedPosts, source: 'cache' }
+		}
+	}
+
+	// If no cached posts, fetch from API
+	return fetchFromApiAndCache(token, context)
+}
+
+async function fetchFromApiAndCache(
+	token?: string | null,
+	context?: vscode.ExtensionContext,
+): Promise<{ posts: Post[]; source: 'api' }> {
 	const url = `${baseUrl}/api/posts`
 	logger.debug('Fetch URL:', url)
 
-	try {
-		logger.debug(
-			'Making fetch request with token:',
-			token ? 'exists' : 'does not exist',
-		)
-		const response = await fetch(url, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
+	const response = await fetch(url, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	})
+
+	if (!response.ok) {
+		logger.warn('Failed to fetch posts from API. Status:', response.status)
+		throw new Error(`HTTP error! status: ${response.status}`)
+	}
+
+	const data = await response.json()
+	logger.debug('Fetched posts data from API:', data)
+
+	// Cache the fetched posts as JSON and MDX files
+	if (context) {
+		await cachePostsAsJson(data, context)
+		await cachePostsAsMdx(data, context)
+		logger.debug('Cached posts as JSON and MDX files')
+	}
+
+	return { posts: data, source: 'api' }
+}
+
+async function cachePostsAsJson(
+	posts: Post[],
+	context: vscode.ExtensionContext,
+): Promise<void> {
+	const uri = vscode.Uri.parse(`${TEMP_SCHEME}:/${POSTS_JSON_FILE}`)
+	await vscode.workspace.fs.writeFile(uri, Buffer.from(JSON.stringify(posts)))
+}
+
+async function cachePostsAsMdx(
+	posts: Post[],
+	context: vscode.ExtensionContext,
+): Promise<void> {
+	for (const post of posts) {
+		const uri = vscode.Uri.parse(`${TEMP_SCHEME}:/${post.fields.slug}.mdx`)
+		const content = matter.stringify(post.fields.body || '', {
+			title: post.fields.title,
 		})
+		await vscode.workspace.fs.writeFile(uri, Buffer.from(content))
+	}
+}
 
-		logger.debug('Fetch response status:', response.status)
-
-		if (!response.ok) {
-			logger.error('Failed to fetch posts. Status:', response.status)
-			throw new Error(`HTTP error! status: ${response.status}`)
-		}
-
-		const data = await response.json()
-		logger.debug('Fetched posts data:', data)
-
-		return data
+async function loadCachedPostsFromJson(
+	context: vscode.ExtensionContext,
+): Promise<Post[]> {
+	const uri = vscode.Uri.parse(`${TEMP_SCHEME}:/${POSTS_JSON_FILE}`)
+	try {
+		const content = await vscode.workspace.fs.readFile(uri)
+		return JSON.parse(content.toString()) as Post[]
 	} catch (error) {
-		logger.error('Error fetching posts:', error)
-		throw error
+		logger.warn('Failed to load cached posts from JSON:', error)
+		return []
 	}
 }
 

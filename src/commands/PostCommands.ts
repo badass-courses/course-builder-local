@@ -143,9 +143,7 @@ export class PostCommands {
 			if (postOrUndefined) {
 				post = postOrUndefined
 			} else {
-				const client = await getAuthenticatedClient(context)
-
-				const posts = await fetchPosts()
+				const { posts } = await fetchPosts(token, context)
 				const items = posts.map((p: Post) => ({
 					label: p.fields.title,
 					description: `ID: ${p.id}`,
