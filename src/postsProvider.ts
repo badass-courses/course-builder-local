@@ -4,7 +4,6 @@ import { Post } from './types'
 import { fetchPosts } from './lib/posts'
 import { type TokenSet } from 'openid-client'
 import { extensionEvents } from './lib/eventEmitter'
-import { PostsDetailProvider } from './postsDetailProvider'
 import { logger } from './utils/logger'
 import { TEMP_SCHEME } from './config'
 
@@ -16,15 +15,11 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 		this._onDidChangeTreeData.event
 
 	context: vscode.ExtensionContext
-	postsDetailProvider: PostsDetailProvider
 
-	constructor(
-		context: vscode.ExtensionContext,
-		postsDetailProvider: PostsDetailProvider,
-	) {
+	constructor(context: vscode.ExtensionContext) {
 		logger.debug('PostsProvider constructor called')
 		this.context = context
-		this.postsDetailProvider = postsDetailProvider
+
 		extensionEvents.on('post:updated', () => this.refresh())
 		extensionEvents.on('post:created', () => this.refresh())
 		extensionEvents.on('post:published', () => this.refresh())
@@ -38,25 +33,19 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 		logger.debug('PostsProvider refresh called')
 		// Clear the cache when manually refreshing
 		const tempUri = vscode.Uri.parse(`${TEMP_SCHEME}:/`)
-		vscode.workspace.fs
-			.readDirectory(tempUri)
-			.then((files) => {
-				files.forEach(([name, type]) => {
-					if (
-						type === vscode.FileType.File &&
-						(name.endsWith('.mdx') || name === 'posts.json')
-					) {
-						vscode.workspace.fs.delete(
-							vscode.Uri.parse(`${TEMP_SCHEME}:/${name}`),
-						)
-					}
-				})
-				this._onDidChangeTreeData.fire(undefined)
+		vscode.workspace.fs.readDirectory(tempUri).then((files) => {
+			files.forEach(([name, type]) => {
+				if (
+					type === vscode.FileType.File &&
+					(name.endsWith('.mdx') || name === 'posts.json')
+				) {
+					vscode.workspace.fs.delete(
+						vscode.Uri.parse(`${TEMP_SCHEME}:/${name}`),
+					)
+				}
 			})
-			.catch((error) => {
-				logger.warn('Failed to clear cached posts:', error)
-				this._onDidChangeTreeData.fire(undefined)
-			})
+			this._onDidChangeTreeData.fire(undefined)
+		})
 	}
 
 	getTreeItem(element: Post): vscode.TreeItem {

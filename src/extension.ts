@@ -4,7 +4,7 @@
 import * as vscode from 'vscode'
 
 import { PostsProvider } from './postsProvider'
-import { PostsDetailProvider, showPostDetail } from './postsDetailProvider'
+import { PostsDetailProvider } from './postsDetailProvider'
 
 import { Post } from './types'
 import { PostCommands } from './commands/PostCommands'
@@ -69,14 +69,19 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 	)
 
-	// Create PostsDetailProvider first
+	// Create and register PostsDetailProvider
 	logger.debug('Creating PostsDetailProvider')
 	const postsDetailProvider = new PostsDetailProvider(context)
-	vscode.window.registerTreeDataProvider('postsDetail', postsDetailProvider)
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			'postsDetail',
+			postsDetailProvider,
+		),
+	)
 
 	// Create PostsProvider with postsDetailProvider
 	logger.debug('Creating PostsProvider')
-	const postsProvider = new PostsProvider(context, postsDetailProvider)
+	const postsProvider = new PostsProvider(context)
 	vscode.window.registerTreeDataProvider('posts', postsProvider)
 
 	// Add a command to refresh the posts list
@@ -109,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		createNewPostDisposable,
 	)
 
-	// Register the selectPost command
+	// Update the selectPost command
 	const selectPostDisposable = vscode.commands.registerCommand(
 		'course-builder-local.selectPost',
 		(post: Post) => {
@@ -120,21 +125,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Add the new disposable to context.subscriptions
 	context.subscriptions.push(selectPostDisposable)
 
-	// Register the showPostDetail command
-	const showPostDetailDisposable = vscode.commands.registerCommand(
-		'course-builder-local.showPostDetail',
-		(post: Post) => showPostDetail(post, context),
-	)
-
-	// Add the new disposable to context.subscriptions
-	context.subscriptions.push(showPostDetailDisposable)
-
 	// Register the combined selectAndShowPostDetail command
 	const selectAndShowPostDetailDisposable = vscode.commands.registerCommand(
 		'course-builder-local.selectAndShowPostDetail',
 		(post: Post) => {
 			postsDetailProvider.refresh(post)
-			showPostDetail(post, context)
+			vscode.commands.executeCommand('postsDetail.focus')
 		},
 	)
 

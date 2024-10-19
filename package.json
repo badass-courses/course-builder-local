@@ -94,6 +94,7 @@
 					"name": "Posts"
 				},
 				{
+					"type": "webview",
 					"id": "postsDetail",
 					"name": "Post Details"
 				}
@@ -161,8 +162,11 @@
 		"@epic-web/remember": "^1.1.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
 		"@tailwindcss/forms": "^0.5.9",
+		"@types/axios": "^0.14.0",
 		"@types/react": "^18.3.11",
 		"@types/react-dom": "^18.3.1",
+		"@types/shortid": "^0.0.32",
+		"axios": "^1.7.7",
 		"esbuild": "^0.17.0",
 		"esbuild-server": "^0.3.0",
 		"gray-matter": "^4.0.3",
@@ -172,6 +176,7 @@
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
 		"rimraf": "^6.0.1",
+		"shortid": "^2.2.16",
 		"tailwindcss-animate": "^1.0.7",
 		"vscode-uri": "^3.0.8",
 		"zod": "^3.23.8"
