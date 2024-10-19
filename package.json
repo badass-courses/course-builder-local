@@ -128,7 +128,7 @@
 		"watch:dashboard": "node esbuild.dashboard.js --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
 		"package": "npm run check-types && npm run lint && npm-run-all --parallel prod:*",
-		"dev:dashboard": "npm run clean && node esbuild.dashboard.js --sourcemap",
+		"dev:dashboard": "node esbuild.dashboard.js --sourcemap",
 		"prod:extension": "NODE_ENV=production node esbuild.js --sourcemap",
 		"prod:dashboard": "NODE_ENV=production node esbuild.dashboard.js --sourcemap",
 		"compile-tests": "tsc -p . --outDir out",
@@ -148,14 +148,19 @@
 		"@typescript-eslint/parser": "^8.7.0",
 		"@vscode/test-cli": "^0.0.10",
 		"@vscode/test-electron": "^2.4.1",
+		"autoprefixer": "^10.4.20",
 		"esbuild": "^0.24.0",
+		"esbuild-style-plugin": "^1.6.3",
 		"eslint": "^9.11.1",
 		"npm-run-all": "^4.1.5",
+		"postcss": "^8.4.47",
+		"tailwindcss": "^3.4.14",
 		"typescript": "^5.6.2"
 	},
 	"dependencies": {
 		"@epic-web/remember": "^1.1.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
+		"@tailwindcss/forms": "^0.5.9",
 		"@types/react": "^18.3.11",
 		"@types/react-dom": "^18.3.1",
 		"esbuild": "^0.17.0",
@@ -167,6 +172,7 @@
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
 		"rimraf": "^6.0.1",
+		"tailwindcss-animate": "^1.0.7",
 		"vscode-uri": "^3.0.8",
 		"zod": "^3.23.8"
 	}

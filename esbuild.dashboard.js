@@ -1,3 +1,4 @@
+const postCssPlugin = require('esbuild-style-plugin')
 const esbuild = require('esbuild')
 const path = require('path')
 const fs = require('fs')
@@ -7,9 +8,9 @@ const server = require('esbuild-server')
 const isProduction = process.env.NODE_ENV === 'production'
 
 const buildOptions = {
-	entryPoints: ['src/dashboardWebView/index.tsx'],
+	entryPoints: ['src/dashboardWebView/dashboard.tsx'],
 	bundle: true,
-	outfile: 'dist/dashboard.js',
+	outdir: 'dist',
 	minify: isProduction,
 	sourcemap: isProduction ? 'external' : true,
 	target: ['es2020'],
@@ -17,7 +18,6 @@ const buildOptions = {
 	loader: {
 		'.tsx': 'tsx',
 		'.ts': 'ts',
-		'.js': 'js',
 		'.css': 'css',
 	},
 	metafile: true,
@@ -35,6 +35,47 @@ const buildOptions = {
 				}))
 			},
 		},
+		{
+			name: 'rebuild-notify',
+			setup(build) {
+				build.onEnd((result) => {
+					console.log(`build ended with ${result.errors.length} errors`)
+					// HERE: somehow restart the server from here, e.g., by sending a signal that you trap and react to inside the server.
+				})
+			},
+		},
+	],
+}
+
+const cssBuildOptions = {
+	entryPoints: ['src/dashboardWebView/style/dashboard.css'],
+	outdir: 'dist/style',
+	bundle: true,
+	minify: isProduction,
+	loader: {
+		'.css': 'file',
+	},
+	sourcemap: isProduction ? 'external' : true,
+	define: {
+		'process.env.NODE_ENV': JSON.stringify(
+			process.env.NODE_ENV || 'development',
+		),
+	},
+	plugins: [
+		postCssPlugin({
+			postcss: {
+				plugins: [require('tailwindcss'), require('autoprefixer')],
+			},
+		}),
+		{
+			name: 'rebuild-notify',
+			setup(build) {
+				build.onEnd((result) => {
+					console.log(`build ended with ${result.errors.length} errors`)
+					// HERE: somehow restart the server from here, e.g., by sending a signal that you trap and react to inside the server.
+				})
+			},
+		},
 	],
 }
 
@@ -46,6 +87,11 @@ if (isProduction) {
 const build = async () => {
 	try {
 		const result = await esbuild.build(buildOptions)
+		const cssResult = await esbuild.build(cssBuildOptions)
+		console.log({ result })
+
+		const ctx = await esbuild.context(buildOptions)
+		const cssCtx = await esbuild.context(cssBuildOptions)
 
 		// Generate manifest
 		const manifest = Object.keys(result.metafile.outputs).reduce((acc, key) => {
@@ -77,6 +123,8 @@ const build = async () => {
 			console.log('Bundle analysis generated.')
 		}
 
+		await ctx.watch()
+		await cssCtx.watch()
 		return result
 	} catch (error) {
 		console.error('Build failed:', error)
@@ -94,7 +142,7 @@ const main = async () => {
 				{
 					...buildOptions,
 					allowOverwrite: true,
-					entryPoints: ['dist/dashboard.js'],
+					entryPoints: ['dist/dashboard.js', 'dist/dashboard.css'],
 				},
 				{
 					port: 9000,

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { Post } from './types'
 import { Extension } from './helpers/Extension'
-import { getWebviewJsFiles } from './utils/getWebviewJsFiles'
+import { getWebviewCSSUrl, getWebviewJsFiles } from './utils/getWebviewJsFiles'
 import { logger } from './utils/logger'
 
 export class PostsDetailProvider implements vscode.TreeDataProvider<Post> {
@@ -92,6 +92,14 @@ async function getWebviewContent(
 		scriptUris.push(`http://${localServerUrl}/${webviewFile}`)
 	}
 
+	let cssUrl = ''
+
+	if (isProd) {
+		cssUrl = await getWebviewCSSUrl('dashboard', webView)
+	} else {
+		cssUrl = `http://${localServerUrl}/dashboard.css`
+	}
+
 	logger.debug('scriptUris', scriptUris)
 
 	return `<!DOCTYPE html>
@@ -100,6 +108,7 @@ async function getWebviewContent(
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Post Detail</title>
+		<link rel="stylesheet" href="${cssUrl}">
 	</head>
 	<body>
 		<div id="app"></div>

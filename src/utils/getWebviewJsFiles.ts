@@ -17,3 +17,13 @@ export const getWebviewJsFiles = async (name: string, webview: Webview) => {
 	)
 	return files
 }
+
+export const getWebviewCSSUrl = async (name: string, webview: Webview) => {
+	const context = Extension.getInstance()
+	const extensionPath = context.extensionPath
+	const webviewFolder = Uri.joinPath(extensionPath, 'dist')
+
+	return webview
+		.asWebviewUri(Uri.joinPath(webviewFolder, `${name}.css`))
+		.toString()
+}
