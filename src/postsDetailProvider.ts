@@ -41,29 +41,46 @@ export class PostsDetailProvider implements vscode.TreeDataProvider<Post> {
 	}
 }
 
+const postPanels = new Map<string, vscode.WebviewPanel>()
+
 export async function showPostDetail(
 	post: Post,
 	context: vscode.ExtensionContext,
 ) {
-	const panel = vscode.window.createWebviewPanel(
-		'postDetail',
-		`Post Detail: ${post.fields.title}`,
-		vscode.ViewColumn.One,
-		{
-			enableScripts: true,
-			retainContextWhenHidden: true,
-		},
-	)
+	const postId = post.id
+	let panel = postPanels.get(postId)
+
+	if (panel) {
+		panel.reveal(vscode.ViewColumn.One)
+	} else {
+		panel = vscode.window.createWebviewPanel(
+			'postDetail',
+			`Post Detail: ${post.fields.title}`,
+			vscode.ViewColumn.One,
+			{
+				enableScripts: true,
+				retainContextWhenHidden: true,
+			},
+		)
+
+		postPanels.set(postId, panel)
+
+		panel.onDidDispose(
+			() => {
+				postPanels.delete(postId)
+			},
+			null,
+			context.subscriptions,
+		)
+	}
 
 	panel.webview.html = await getWebviewContent(post, panel.webview)
 
-	// Set up message passing
 	panel.webview.onDidReceiveMessage(
 		(message) => {
 			switch (message.command) {
 				case 'ready':
-					// Send the post data to the webview
-					panel.webview.postMessage({ command: 'post', post: post })
+					panel?.webview.postMessage({ command: 'post', post: post })
 					return
 			}
 		},
