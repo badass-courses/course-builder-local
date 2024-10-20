@@ -4,7 +4,7 @@
 	"publisher": "badass",
 	"description": "Publish Posts to your Course Builder Site from your IDE",
 	"repository": "https://github.com/badass-courses/course-builder-local",
-	"version": "0.0.15",
+	"version": "0.0.16",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
@@ -149,13 +149,13 @@
 		"@typescript-eslint/parser": "^8.7.0",
 		"@vscode/test-cli": "^0.0.10",
 		"@vscode/test-electron": "^2.4.1",
-		"autoprefixer": "^10.4.20",
+		"autoprefixer": "^10.4.14",
 		"esbuild": "^0.24.0",
 		"esbuild-style-plugin": "^1.6.3",
 		"eslint": "^9.11.1",
 		"npm-run-all": "^4.1.5",
-		"postcss": "^8.4.47",
-		"tailwindcss": "^3.4.14",
+		"postcss": "^8.4.21",
+		"tailwindcss": "^3.3.0",
 		"typescript": "^5.6.2"
 	},
 	"dependencies": {

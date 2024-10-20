@@ -1,9 +1,21 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-	content: ['./src/dashboardWebView/**/*.{ts,tsx,js,jsx}'],
+	content: ['./src/**/*.{js,jsx,ts,tsx}'],
 	darkMode: ['class', '.vscode-dark'],
 	theme: {
 		extend: {
+			colors: {
+				'vscode-editor': 'var(--vscode-editor-background)',
+				'vscode-foreground': 'var(--vscode-foreground)',
+				'vscode-button-background': 'var(--vscode-button-background)',
+				'vscode-button-foreground': 'var(--vscode-button-foreground)',
+				'vscode-button-border': 'var(--vscode-button-border)',
+				'vscode-button-hoverBackground': 'var(--vscode-button-hoverBackground)',
+				'vscode-errorForeground': 'var(--vscode-errorForeground)',
+				'vscode-progressBar-background': 'var(--vscode-progressBar-background)',
+				'vscode-progressBar-foreground': 'var(--vscode-progressBar-foreground)',
+				'vscode-textLink-foreground': 'var(--vscode-textLink-foreground)',
+			},
 			animation: {
 				'reverse-spin': 'reverse-spin 1s linear infinite',
 			},

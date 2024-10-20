@@ -7,9 +7,11 @@ import { uploadToS3 } from './upload-to-s3'
 const VideoUploadForm = ({
 	postId,
 	token,
+	apiUrl,
 }: {
 	postId?: string
 	token?: string | null
+	apiUrl: string | null
 }) => {
 	const {
 		fileError,
@@ -38,8 +40,7 @@ const VideoUploadForm = ({
 							: 0
 						setUploadProgress(progress)
 					},
-					signingUrl:
-						'https://joel-x42.coursebuilder.dev/api/uploads/signed-url',
+					signingUrl: `${apiUrl}/api/uploads/signed-url`,
 					token,
 				})
 
@@ -47,7 +48,7 @@ const VideoUploadForm = ({
 				setS3FileUrl(publicUrl)
 				setIsUploading(false)
 
-				await fetch('https://joel-x42.coursebuilder.dev/api/uploads/new', {
+				await fetch(`${apiUrl}/api/uploads/new`, {
 					method: 'POST',
 					body: JSON.stringify({
 						file: {
@@ -69,30 +70,67 @@ const VideoUploadForm = ({
 		}
 	}
 
-	return postId && token ? (
-		<>
-			<form onSubmit={handleSubmit}>
-				<label htmlFor="video">Upload a video</label>
-				<input
-					type="file"
-					accept="video/*"
-					id="video"
-					name="video"
-					onChange={handleFileChange}
-				/>
-				<button disabled={!fileContents || isUploading} type="submit">
-					Upload to Builder
+	return postId && token && apiUrl ? (
+		<div className="bg-vscode-editor text-vscode-foreground p-4">
+			<form onSubmit={handleSubmit} className="space-y-4">
+				<div>
+					<label htmlFor="video" className="mb-2 block font-semibold">
+						Upload a video
+					</label>
+					<div className="relative">
+						<input
+							type="file"
+							accept="video/*"
+							id="video"
+							name="video"
+							onChange={handleFileChange}
+							className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+						/>
+						<div className="bg-vscode-button-background text-vscode-button-foreground border-vscode-button-border rounded border px-4 py-2">
+							{fileName || 'Choose file...'}
+						</div>
+					</div>
+				</div>
+				<button
+					disabled={!fileContents || isUploading}
+					type="submit"
+					className={`w-full rounded px-4 py-2 ${
+						!fileContents || isUploading
+							? 'bg-vscode-button-background cursor-not-allowed opacity-50'
+							: 'bg-vscode-button-background hover:bg-vscode-button-hoverBackground'
+					} text-vscode-button-foreground`}
+				>
+					{isUploading ? 'Uploading...' : 'Upload to Builder'}
 				</button>
 			</form>
-			{fileError && <>{fileError}</>}
+			{fileError && (
+				<div className="text-vscode-errorForeground mt-4">{fileError}</div>
+			)}
 			{isUploading && (
-				<div>
-					<progress value={uploadProgress} max="100" />
-					<span>{uploadProgress}%</span>
+				<div className="mt-4">
+					<div className="bg-vscode-progressBar-background h-2.5 w-full rounded-full">
+						<div
+							className="bg-vscode-progressBar-foreground h-2.5 rounded-full transition-all duration-300 ease-in-out"
+							style={{ width: `${uploadProgress}%` }}
+						></div>
+					</div>
+					<span className="mt-1 inline-block text-sm">{uploadProgress}%</span>
 				</div>
 			)}
-			{s3FileUrl && <span className="inline-block h-96 w-96">{s3FileUrl}</span>}
-		</>
+			{s3FileUrl && (
+				<div className="mt-4 space-y-2">
+					<span className="block">Upload successful!</span>
+					<a
+						href={s3FileUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-vscode-textLink-foreground hover:underline"
+					>
+						View uploaded video
+					</a>
+				</div>
+			)}
+		</div>
 	) : null
 }
 

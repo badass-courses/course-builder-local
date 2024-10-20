@@ -9,26 +9,22 @@ const baseUrl = getBaseUrl()
 const apiUrl = `${baseUrl}/api`
 const POSTS_JSON_FILE = 'posts.json'
 
+async function isOnline(): Promise<boolean> {
+	try {
+		await fetch(baseUrl, { method: 'HEAD' })
+		return true
+	} catch (error) {
+		return false
+	}
+}
+
 export async function fetchPosts(
 	token?: string | null,
 	context?: vscode.ExtensionContext,
 ): Promise<{ posts: Post[]; source: 'cache' | 'api' }> {
 	logger.debug('Fetching posts...')
 
-	// First, try to load cached posts from JSON
-	if (context) {
-		const cachedPosts = await loadCachedPostsFromJson(context)
-		if (cachedPosts.length > 0) {
-			logger.info('Loaded posts from cached JSON file')
-			// Return cached posts immediately, but continue fetching from API
-			fetchFromApiAndCache(token, context).catch((error) => {
-				logger.error('Error fetching posts from API:', error)
-			})
-			return { posts: cachedPosts, source: 'cache' }
-		}
-	}
-
-	// If no cached posts, fetch from API
+	// If online or no cached posts, fetch from API
 	return fetchFromApiAndCache(token, context)
 }
 

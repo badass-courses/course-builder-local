@@ -121,10 +121,11 @@ const build = async () => {
 				analyzerHtml,
 			)
 			console.log('Bundle analysis generated.')
+		} else {
+			await ctx.watch()
+			await cssCtx.watch()
 		}
 
-		await ctx.watch()
-		await cssCtx.watch()
 		return result
 	} catch (error) {
 		console.error('Build failed:', error)
@@ -134,7 +135,7 @@ const build = async () => {
 
 const main = async () => {
 	await build()
-
+	console.log('Build complete.')
 	// Development server
 	if (!isProduction) {
 		server
@@ -142,7 +143,7 @@ const main = async () => {
 				{
 					...buildOptions,
 					allowOverwrite: true,
-					entryPoints: ['dist/dashboard.js', 'dist/dashboard.css'],
+					entryPoints: ['dist/dashboard.js', 'dist/style/dashboard.css'],
 				},
 				{
 					port: 9000,
@@ -152,6 +153,8 @@ const main = async () => {
 			.then(() => {
 				console.log('Server started on port 9000')
 			})
+	} else {
+		process.exit(0)
 	}
 }
 

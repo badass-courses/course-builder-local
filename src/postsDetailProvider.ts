@@ -4,12 +4,20 @@ import { Extension } from './helpers/Extension'
 import { getWebviewCSSUrl, getWebviewJsFiles } from './utils/getWebviewJsFiles'
 import { logger } from './utils/logger'
 import { tokenForContext } from './lib/token-for-context'
+import { getBaseUrl } from './config'
 
 export class PostsDetailProvider implements vscode.WebviewViewProvider {
 	private _view?: vscode.WebviewView
 	private selectedPost: Post | undefined
+	private _onDidReceiveMessage: (message: any) => void
 
-	constructor(private context: vscode.ExtensionContext) {}
+	constructor(private context: vscode.ExtensionContext) {
+		this._onDidReceiveMessage = (message: any) => {
+			if (message.command === 'log') {
+				console.log('Webview log:', message.text)
+			}
+		}
+	}
 
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
@@ -63,6 +71,11 @@ export class PostsDetailProvider implements vscode.WebviewViewProvider {
 				command: 'token',
 				token,
 			})
+
+			this._view.webview.postMessage({
+				command: 'apiUrl',
+				apiUrl: getBaseUrl(),
+			})
 		}
 	}
 
@@ -88,16 +101,46 @@ export class PostsDetailProvider implements vscode.WebviewViewProvider {
 		if (isProd) {
 			cssUrl = await getWebviewCSSUrl('dashboard', webView)
 		} else {
-			cssUrl = `http://${localServerUrl}/dashboard.css`
+			cssUrl = `http://${localServerUrl}/style/dashboard.css`
 		}
 
 		logger.debug('scriptUris', scriptUris)
+
+		// Define a CSP that allows necessary resources for MuxPlayer
+		const csp = [
+			`default-src 'none';`,
+			`img-src ${`vscode-file://vscode-app`} ${
+				webView.cspSource
+			} https://api.visitorbadge.io https://*.mux.com https://*.gstatic.com 'self' 'unsafe-inline' https://* blob:;`,
+			`media-src 'self' blob:vscode-webview://* https://*.mux.com ${`vscode-file://vscode-app`} ${
+				webView.cspSource
+			} 'self' 'unsafe-inline' https://* blob:;`,
+			`script-src blob:vscode-webview://* https://*.mux.com vscode-webview://* ${
+				isProd
+					? `'nonce-${1212}'`
+					: `http://${localServerUrl} http://0.0.0.0:${localPort}`
+			} 'unsafe-eval' 'unsafe-inline' https://*;`,
+			`style-src ${webView.cspSource} ${
+				isProd
+					? "'self'"
+					: `http://${localServerUrl} http://0.0.0.0:${localPort}`
+			} 'unsafe-inline' https://*;`,
+			`font-src ${webView.cspSource};`,
+			`connect-src https://* blob:vscode-webview://* ${
+				isProd
+					? ``
+					: `ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`
+			};`,
+			`worker-src blob:;`,
+			`child-src blob:;`,
+		].join(' ')
 
 		return `<!DOCTYPE html>
 		<html lang="en">
 		<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<meta http-equiv="Content-Security-Policy" content="${csp}">
 			<title>Post Detail</title>
 			<link rel="stylesheet" href="${cssUrl}">
 		</head>
@@ -107,6 +150,14 @@ export class PostsDetailProvider implements vscode.WebviewViewProvider {
 			<script>
 				const vscode = acquireVsCodeApi();
 				vscode.postMessage({ command: 'ready' });
+			</script>
+			
+			<script>
+				function log(message) {
+					vscode.postMessage({ command: 'log', text: message });
+				}
+				log('Webview loaded');
+				// Use this log function throughout your React components
 			</script>
 		</body>
 		</html>`
