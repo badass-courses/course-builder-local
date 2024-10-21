@@ -142,8 +142,10 @@ export class PostsDetailProvider implements vscode.WebviewViewProvider {
 			<meta http-equiv="Content-Security-Policy" content="${csp}">
 			<title>Post Detail</title>
 			<link rel="stylesheet" href="${cssUrl}">
+			<script src="https://cdn.jsdelivr.net/npm/@mux/mux-player"></script>
 		</head>
 		<body>
+		  
 			<div id="app"></div>
 			${scriptUris.map((scriptUri) => `<script src="${scriptUri}"></script>`).join('')}
 			<script>

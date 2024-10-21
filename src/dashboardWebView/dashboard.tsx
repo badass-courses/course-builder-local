@@ -2,7 +2,7 @@ import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 
 import VideoUploadForm from '../video-upload/video-upload-form'
-import MuxPlayer from '@mux/mux-player-react'
+import MuxPlayer from '@mux/mux-player-react/lazy'
 const elm = document.querySelector('#app')
 
 if (elm) {
@@ -81,6 +81,15 @@ if (elm) {
 			setTimeout(logVideoElement, 2000)
 		}, [muxPlaybackId])
 
+		React.useEffect(() => {
+			const mediaTheme = document.querySelector('media-theme')
+			if (mediaTheme && mediaTheme.shadowRoot) {
+				const style = document.createElement('style')
+				style.textContent = ':host { visibility: visible !important; }'
+				mediaTheme.shadowRoot.appendChild(style)
+			}
+		}, [])
+
 		return (
 			<div className="p-3 font-bold">
 				<h1 className="text-4xl font-bold">
@@ -88,12 +97,11 @@ if (elm) {
 				</h1>
 				{muxPlaybackId ? (
 					<div className="py-6">
-						<video
-							controls
-							crossOrigin="anonymous"
+						<MuxPlayer
+							preferPlayback="mse"
 							src={`https://stream.mux.com/${muxPlaybackId}/high.mp4`}
-							style={{ width: '100%', height: '100%' }}
 						/>
+						x
 						<a href={`${apiUrl}/${post.fields.slug}`} target="_blank">
 							open in browser
 						</a>

@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+media-theme::part(host) {
+	visibility: visible !important;
+}
+
+/* Alternative approach */
+media-theme > :first-child {
+	visibility: visible !important;
+}
+
+mux-player {
+	--seek-backward-button: none;
+	--seek-forward-button: none;
+	--fullscreen-button: none;
+}
