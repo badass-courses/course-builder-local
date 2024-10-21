@@ -101,7 +101,6 @@ if (elm) {
 							preferPlayback="mse"
 							src={`https://stream.mux.com/${muxPlaybackId}/high.mp4`}
 						/>
-						x
 						<a href={`${apiUrl}/${post.fields.slug}`} target="_blank">
 							open in browser
 						</a>
