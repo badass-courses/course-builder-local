@@ -4,7 +4,7 @@
 	"publisher": "badass",
 	"description": "Publish Posts to your Course Builder Site from your IDE",
 	"repository": "https://github.com/badass-courses/course-builder-local",
-	"version": "0.0.16",
+	"version": "0.0.18",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
@@ -54,6 +54,10 @@
 			{
 				"command": "course-builder-local.clearAuth",
 				"title": "Course Builder: Clear Authentication"
+			},
+			{
+				"command": "course-builder-local.showAuthView",
+				"title": "Show Course Builder Auth View"
 			}
 		],
 		"menus": {
@@ -91,12 +95,22 @@
 			"course-builder": [
 				{
 					"id": "posts",
-					"name": "Posts"
+					"name": "Posts",
+					"when": "course-builder-local:authenticated"
 				},
 				{
 					"type": "webview",
 					"id": "postsDetail",
-					"name": "Post Details"
+					"name": "Post Details",
+					"when": "course-builder-local:authenticated"
+				},
+				{
+					"type": "webview",
+					"id": "authView",
+					"name": "Authentication",
+					"icon": "media/dep.svg",
+					"contextualTitle": "Authentication",
+					"when": "!course-builder-local:authenticated"
 				}
 			]
 		},
@@ -180,5 +194,9 @@
 		"tailwindcss-animate": "^1.0.7",
 		"vscode-uri": "^3.0.8",
 		"zod": "^3.23.8"
-	}
+	},
+	"files": [
+		"dist",
+		"media"
+	]
 }

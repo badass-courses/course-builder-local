@@ -15,6 +15,7 @@ import { TEMP_SCHEME } from './config'
 import { extensionEvents } from './lib/eventEmitter'
 import { Extension } from './helpers/Extension'
 import { logger } from './utils/logger'
+import { AuthProvider } from './authProvider'
 
 // Create the tempFileSystemProvider as a global variable
 let tempFileSystemProvider: TempFileSystemProvider
@@ -39,20 +40,66 @@ export async function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	logger.info('Activating course-builder-local extension')
 
-	// await clearAuth(context)
+	// Create AuthProvider
+	logger.debug('Creating AuthProvider')
+	const authProvider = new AuthProvider(context)
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider('authView', authProvider),
+	)
 
-	// Authenticate the user
-	try {
-		logger.debug('Attempting to authenticate user...')
-		await authenticate(context)
-		logger.info('User authenticated successfully')
-	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : 'Unknown error'
-		logger.error(`Authentication failed: ${errorMessage}`)
-		vscode.window.showErrorMessage(`Authentication failed: ${errorMessage}`)
-		return // Exit if authentication fails
+	logger.debug('AuthProvider created')
+
+	// Function to update authentication state and view visibility
+	const updateAuthState = (isAuthenticated: boolean) => {
+		logger.debug(`Updating auth state: ${isAuthenticated}`)
+		vscode.commands.executeCommand(
+			'setContext',
+			'course-builder-local:authenticated',
+			isAuthenticated,
+		)
+		if (isAuthenticated) {
+			logger.debug('Showing course-builder view')
+			vscode.commands.executeCommand('workbench.view.extension.course-builder')
+		} else {
+			logger.debug('Focusing authView')
+			vscode.commands.executeCommand('authView.focus')
+		}
 	}
+
+	// Function to attempt authentication
+	const attemptAuthentication = async (retryCount = 0): Promise<boolean> => {
+		try {
+			logger.debug(
+				`Attempting to authenticate user... (Attempt ${retryCount + 1})`,
+			)
+			await authenticate(context)
+			logger.info('User authenticated successfully')
+			return true
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : 'Unknown error'
+			logger.error(`Authentication failed: ${errorMessage}`)
+
+			if (retryCount < 5) {
+				logger.warn('Authentication failed. Clearing auth and retrying...')
+				await clearAuth(context)
+				return attemptAuthentication(retryCount + 1)
+			} else {
+				vscode.window.showErrorMessage(
+					`Authentication failed: ${errorMessage}. Please try logging in manually.`,
+				)
+				return false
+			}
+		}
+	}
+
+	// Attempt authentication
+	const isAuthenticated = false //await attemptAuthentication()
+
+	// Update auth state and view visibility
+	updateAuthState(isAuthenticated)
+
+	logger.debug(`****** isAuthenticated: ${isAuthenticated}`)
 
 	// Command to create and edit a new post
 	const createAndEditDisposable = vscode.commands.registerCommand(
@@ -142,6 +189,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		'course-builder-local.logout',
 		async () => {
 			await logout(context)
+			updateAuthState(false)
 			// After logout, you might want to clear or refresh certain UI elements
 			postsProvider.refresh()
 			postsDetailProvider.refresh()
@@ -151,12 +199,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Add the logout disposable to context.subscriptions
 	context.subscriptions.push(logoutDisposable)
 
-	// Register the authenticate command
+	// Update the authenticate command
 	const authenticateDisposable = vscode.commands.registerCommand(
 		'course-builder-local.authenticate',
 		async () => {
-			await authenticate(context)
-			postsProvider.refresh()
+			const success = await attemptAuthentication()
+			updateAuthState(success)
+			if (success) {
+				// Refresh necessary views
+				// ... (add code to refresh views)
+			}
 		},
 	)
 
@@ -196,6 +248,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// At the end of the activate function
 	vscode.commands.executeCommand('course-builder-local.showPostsView')
+
+	const showAuthViewDisposable = vscode.commands.registerCommand(
+		'course-builder-local.showAuthView',
+		() => {
+			vscode.commands.executeCommand('workbench.view.extension.course-builder')
+			vscode.commands.executeCommand('authView.focus')
+		},
+	)
+	context.subscriptions.push(showAuthViewDisposable)
+
+	if (isAuthenticated) {
+	} else {
+		logger.debug('User not authenticated, focusing authView')
+		// Show auth view when not authenticated
+		await vscode.commands.executeCommand(
+			'workbench.view.extension.course-builder',
+		)
+		await vscode.commands.executeCommand('authView.focus')
+	}
 }
 
 // This method is called when your extension is deactivated

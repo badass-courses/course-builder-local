@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { Extension } from './helpers/Extension'
 
 export const TEMP_SCHEME = 'builder'
 
@@ -7,5 +8,9 @@ export function getConfig() {
 }
 
 export function getBaseUrl(): string {
-	return getConfig().get('baseUrl') || 'https://joel-x42.coursebuilder.dev'
+	// const isProd = Extension.getInstance().isProductionMode
+	return 'https://builder.egghead.io'
+	// return getConfig().get('baseUrl') || isProd
+	// 	? 'https://builder.egghead.io'
+	// 	: 'https://joel-x42.coursebuilder.dev'
 }

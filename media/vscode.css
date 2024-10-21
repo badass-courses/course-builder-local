@@ -1,0 +1,15 @@
+body {
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	color: var(--vscode-foreground);
+	background-color: var(--vscode-editor-background);
+}
+
+.button-primary {
+	background-color: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+}
+
+.button-primary:hover {
+	background-color: var(--vscode-button-hoverBackground);
+}

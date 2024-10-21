@@ -10,6 +10,7 @@ const GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:device_code'
 
 export async function authenticate(
 	context: vscode.ExtensionContext,
+	retryAttempt = 0,
 ): Promise<Client> {
 	try {
 		console.log('Authenticating...')
@@ -19,12 +20,15 @@ export async function authenticate(
 			| undefined
 
 		console.log({ storedTokenSet })
+
+		const client = await getClient()
+
 		if (storedTokenSet) {
-			const client = await getClient()
 			return client
 		}
 
-		const client = await getClient()
+		console.log('No stored token set. Getting device authorization...')
+
 		const handle = await client.deviceAuthorization()
 
 		const message = `Please click [here](${handle.verification_uri_complete}) to authorize this device.`
@@ -63,6 +67,11 @@ export async function authenticate(
 			throw error
 		}
 	} catch (error) {
+		if (retryAttempt < 5) {
+			logger.warn('Authentication failed. Clearing auth and retrying...')
+			await clearAuth(context)
+			return authenticate(context, retryAttempt + 1)
+		}
 		vscode.window.showErrorMessage(
 			`Authentication failed: ${getErrorMessage(error)}`,
 		)
@@ -70,7 +79,7 @@ export async function authenticate(
 	}
 }
 
-async function getClient(): Promise<Client> {
+export async function getClient(): Promise<Client> {
 	const issuer = await Issuer.discover(ISSUER_URL)
 	// @ts-expect-error
 	return await issuer.Client.register({
@@ -82,7 +91,7 @@ async function getClient(): Promise<Client> {
 	})
 }
 
-async function storeTokenSet(
+export async function storeTokenSet(
 	context: vscode.ExtensionContext,
 	tokenSet: TokenSet,
 ) {
