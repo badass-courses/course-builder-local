@@ -8,10 +8,12 @@ const VideoUploadForm = ({
 	postId,
 	token,
 	apiUrl,
+	isReplacement,
 }: {
 	postId?: string
 	token?: string | null
 	apiUrl: string | null
+	isReplacement: boolean
 }) => {
 	const {
 		fileError,
@@ -71,11 +73,11 @@ const VideoUploadForm = ({
 	}
 
 	return postId && token && apiUrl ? (
-		<div className="bg-vscode-editor text-vscode-foreground p-4">
+		<div className="bg-vscode-editor p-4 text-vscode-foreground">
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div>
 					<label htmlFor="video" className="mb-2 block font-semibold">
-						Upload a video
+						{isReplacement ? 'Replace video' : 'Upload a video'}
 					</label>
 					<div className="relative">
 						<input
@@ -86,7 +88,7 @@ const VideoUploadForm = ({
 							onChange={handleFileChange}
 							className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
 						/>
-						<div className="bg-vscode-button-background text-vscode-button-foreground border-vscode-button-border rounded border px-4 py-2">
+						<div className="rounded border border-vscode-button-border bg-vscode-button-background px-4 py-2 text-vscode-button-foreground">
 							{fileName || 'Choose file...'}
 						</div>
 					</div>
@@ -96,7 +98,7 @@ const VideoUploadForm = ({
 					type="submit"
 					className={`w-full rounded px-4 py-2 ${
 						!fileContents || isUploading
-							? 'bg-vscode-button-background cursor-not-allowed opacity-50'
+							? 'cursor-not-allowed bg-vscode-button-background opacity-50'
 							: 'bg-vscode-button-background hover:bg-vscode-button-hoverBackground'
 					} text-vscode-button-foreground`}
 				>
@@ -104,13 +106,13 @@ const VideoUploadForm = ({
 				</button>
 			</form>
 			{fileError && (
-				<div className="text-vscode-errorForeground mt-4">{fileError}</div>
+				<div className="mt-4 text-vscode-errorForeground">{fileError}</div>
 			)}
 			{isUploading && (
 				<div className="mt-4">
-					<div className="bg-vscode-progressBar-background h-2.5 w-full rounded-full">
+					<div className="h-2.5 w-full rounded-full bg-vscode-progressBar-background">
 						<div
-							className="bg-vscode-progressBar-foreground h-2.5 rounded-full transition-all duration-300 ease-in-out"
+							className="h-2.5 rounded-full bg-vscode-progressBar-foreground transition-all duration-300 ease-in-out"
 							style={{ width: `${uploadProgress}%` }}
 						></div>
 					</div>

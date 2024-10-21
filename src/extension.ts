@@ -16,6 +16,7 @@ import { extensionEvents } from './lib/eventEmitter'
 import { Extension } from './helpers/Extension'
 import { logger } from './utils/logger'
 import { AuthProvider } from './authProvider'
+import { tokenForContext } from './lib/token-for-context'
 
 // Create the tempFileSystemProvider as a global variable
 let tempFileSystemProvider: TempFileSystemProvider
@@ -94,7 +95,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Attempt authentication
-	const isAuthenticated = false //await attemptAuthentication()
+	const token = tokenForContext(context)
+	const isAuthenticated = token ? true : false
 
 	// Update auth state and view visibility
 	updateAuthState(isAuthenticated)

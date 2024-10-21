@@ -28,7 +28,6 @@ export class PostsDetailProvider implements vscode.WebviewViewProvider {
 
 		webviewView.webview.options = {
 			enableScripts: true,
-			localResourceRoots: [this.context.extensionUri],
 		}
 
 		this.updateWebview()

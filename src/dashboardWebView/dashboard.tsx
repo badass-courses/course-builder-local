@@ -2,7 +2,7 @@ import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 
 import VideoUploadForm from '../video-upload/video-upload-form'
-
+import MuxPlayer from '@mux/mux-player-react'
 const elm = document.querySelector('#app')
 
 if (elm) {
@@ -88,17 +88,25 @@ if (elm) {
 				</h1>
 				{muxPlaybackId ? (
 					<div className="py-6">
+						<video
+							controls
+							crossOrigin="anonymous"
+							src={`https://stream.mux.com/${muxPlaybackId}/high.mp4`}
+							style={{ width: '100%', height: '100%' }}
+						/>
 						<a href={`${apiUrl}/${post.fields.slug}`} target="_blank">
-							<img
-								style={{ width: '100%', height: '100%' }}
-								src={`https://image.mux.com/${muxPlaybackId}/thumbnail.jpg`}
-							/>
+							open in browser
 						</a>
 					</div>
 				) : (
 					<div className="py-3">No video available</div>
 				)}
-				<VideoUploadForm postId={post?.id} token={token} apiUrl={apiUrl} />
+				<VideoUploadForm
+					postId={post?.id}
+					token={token}
+					apiUrl={apiUrl}
+					isReplacement={muxPlaybackId ? true : false}
+				/>
 			</div>
 		)
 	}
