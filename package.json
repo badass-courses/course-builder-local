@@ -149,7 +149,7 @@
 		"compile-tests": "tsc -p . --outDir out",
 		"watch-tests": "tsc -p . -w --outDir out",
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
-		"check-types": "tsc --noEmit",
+		"check-types": "tsc --noEmit --project tsconfig.json --skipLibCheck",
 		"lint": "eslint src",
 		"test": "vscode-test",
 		"prettier": "prettier --write ./src",
@@ -175,12 +175,11 @@
 	"dependencies": {
 		"@epic-web/remember": "^1.1.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
-		"@mux/mux-player": "^3.0.0",
 		"@mux/mux-player-react": "^3.0.0",
 		"@tailwindcss/forms": "^0.5.9",
 		"@types/axios": "^0.14.0",
-		"@types/react": "npm:types-react@rc",
-		"@types/react-dom": "npm:types-react-dom@rc",
+		"@types/react": "latest",
+		"@types/react-dom": "latest",
 		"@types/shortid": "^0.0.32",
 		"axios": "^1.7.7",
 		"esbuild": "^0.17.0",
@@ -189,20 +188,12 @@
 		"openid-client": "^5.7.0",
 		"prettier": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.8",
-		"react": "19.0.0-rc-65a56d0e-20241020",
-		"react-dom": "19.0.0-rc-65a56d0e-20241020",
+		"react": "latest",
+		"react-dom": "latest",
 		"rimraf": "^6.0.1",
 		"shortid": "^2.2.16",
 		"tailwindcss-animate": "^1.0.7",
 		"vscode-uri": "^3.0.8",
 		"zod": "^3.23.8"
-	},
-	"overrides": {
-		"@types/react": "npm:types-react@rc",
-		"@types/react-dom": "npm:types-react-dom@rc"
-	},
-	"files": [
-		"dist",
-		"media"
-	]
+	}
 }
