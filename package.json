@@ -4,7 +4,8 @@
 	"publisher": "badass",
 	"description": "Publish Posts to your Course Builder Site from your IDE",
 	"repository": "https://github.com/badass-courses/course-builder-local",
-	"version": "0.0.18",
+	"version": "0.0.21",
+	"icon": "resources/badass-courses.png",
 	"engines": {
 		"vscode": "^1.93.0"
 	},
