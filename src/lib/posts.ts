@@ -47,7 +47,7 @@ async function fetchFromApiAndCache(
 	}
 
 	const data = await response.json()
-	logger.debug('Fetched posts data from API:', data)
+	// logger.debug('Fetched posts data from API:', data)
 
 	// Cache the fetched posts as JSON and MDX files
 	if (context) {

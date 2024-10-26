@@ -125,7 +125,7 @@ export class PostsDetailProvider implements vscode.WebviewViewProvider {
 					: `http://${localServerUrl} http://0.0.0.0:${localPort}`
 			} 'unsafe-inline' https://*;`,
 			`font-src ${webView.cspSource};`,
-			`connect-src https://* blob:vscode-webview://* ${
+			`connect-src https://* blob:vscode-webview://* https://* wss://* ${
 				isProd
 					? ``
 					: `ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`

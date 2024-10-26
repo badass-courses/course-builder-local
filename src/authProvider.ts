@@ -25,7 +25,7 @@ export class AuthProvider implements vscode.WebviewViewProvider {
 
 		try {
 			const html = this.getHtmlForWebview()
-			logger.debug('Generated HTML for AuthProvider webview:', html)
+			logger.debug('Generated HTML for AuthProvider webview')
 			webviewView.webview.html = html
 			logger.debug('AuthProvider webview HTML set')
 		} catch (error) {

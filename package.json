@@ -4,7 +4,7 @@
 	"publisher": "badass",
 	"description": "Publish Posts to your Course Builder Site from your IDE",
 	"repository": "https://github.com/badass-courses/course-builder-local",
-	"version": "0.0.21",
+	"version": "0.0.22",
 	"icon": "resources/badass-courses.png",
 	"engines": {
 		"vscode": "^1.93.0"
@@ -178,6 +178,7 @@
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
 		"@mux/mux-player-react": "^3.0.0",
 		"@tailwindcss/forms": "^0.5.9",
+		"@tanstack/react-query": "^5.59.16",
 		"@types/axios": "^0.14.0",
 		"@types/react": "latest",
 		"@types/react-dom": "latest",
@@ -187,6 +188,7 @@
 		"esbuild-server": "^0.3.0",
 		"gray-matter": "^4.0.3",
 		"openid-client": "^5.7.0",
+		"partysocket": "^1.0.2",
 		"prettier": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.8",
 		"react": "latest",

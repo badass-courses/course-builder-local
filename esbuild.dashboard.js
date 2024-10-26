@@ -147,6 +147,9 @@ const main = async () => {
 				},
 				{
 					port: 9000,
+					headers: {
+						'Access-Control-Allow-Origin': '*',
+					},
 				},
 			)
 			.start()

@@ -49,7 +49,7 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 	}
 
 	getTreeItem(element: Post): vscode.TreeItem {
-		logger.debug('PostsProvider getTreeItem called', element)
+		logger.debug('PostsProvider getTreeItem called')
 		if (element.id === 'login') {
 			const treeItem = new vscode.TreeItem(
 				element.fields.title,
@@ -112,7 +112,7 @@ export class PostsProvider implements vscode.TreeDataProvider<Post> {
 				if (posts.length === 0) {
 					logger.warn('No posts fetched')
 				} else {
-					logger.debug('First post:', posts[0])
+					logger.debug('First post:', posts[0].id)
 				}
 
 				if (source === 'cache') {

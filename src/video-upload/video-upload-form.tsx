@@ -9,11 +9,13 @@ const VideoUploadForm = ({
 	token,
 	apiUrl,
 	isReplacement,
+	onUploaded,
 }: {
 	postId?: string
 	token?: string | null
 	apiUrl: string | null
 	isReplacement: boolean
+	onUploaded: (videoId: string) => void
 }) => {
 	const {
 		fileError,
@@ -65,6 +67,7 @@ const VideoUploadForm = ({
 						Authorization: `Bearer ${token}`,
 					},
 				})
+				onUploaded(objectName)
 			}
 		} catch (err) {
 			console.log('error is', err)
