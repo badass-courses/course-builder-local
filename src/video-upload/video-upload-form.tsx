@@ -113,7 +113,7 @@ const VideoUploadForm = ({
 								className="absolute inset-0 cursor-pointer opacity-0"
 							/>
 							{fileName ||
-								(isReplacement ? 'Select new video' : 'Select video')}
+								(isReplacement ? 'Replace Post Video' : 'Add Video to Post')}
 						</Button>
 					</div>
 

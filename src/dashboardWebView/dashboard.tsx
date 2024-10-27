@@ -12,8 +12,23 @@ import {
 } from '@tanstack/react-query'
 import { VideoResourceSchema } from './schemas/video-resource'
 import { Video } from '../components/video'
+import AdvancedTagSelector from '../components/tag-selector'
+import { EggheadTag, EggheadTagSchema } from '../lib/tags'
 
 const elm = document.querySelector('#app')
+
+type BasePost = {
+	id: string
+	fields: { title: string; slug: string }
+	tags: any[]
+	resources: {
+		resource: {
+			id: string
+			type: string
+			fields: { muxPlaybackId: string; slug: string }
+		}
+	}[]
+}
 
 if (elm) {
 	const queryClient = new QueryClient()
@@ -32,31 +47,68 @@ if (elm) {
 		const [newVideoResourceId, setNewVideoResourceId] = React.useState<
 			string | null
 		>(null)
-		const [post, setPost] = React.useState<{
-			id: string
-			fields: { title: string; slug: string }
-			resources: {
-				resource: {
-					id: string
-					type: string
-					fields: { muxPlaybackId: string; slug: string }
-				}
-			}[]
-		} | null>(null)
+		const [vscodePost, setVscodePost] = React.useState<BasePost | null>(null)
 		const [token, setToken] = React.useState<string | null>(null)
 		const [apiUrl, setApiUrl] = React.useState<string | null>(null)
 		const [useFallback, setUseFallback] = React.useState(false)
 
-		console.log({ token })
+		const { data: tags = [], status: tagsStatus } = useQuery({
+			queryKey: ['tags'],
+			queryFn: async () => {
+				const response = await fetch(`${apiUrl}/api/tags`, {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				})
+				const data = await response.json()
+
+				console.log('tag data', data)
+
+				const parsed = EggheadTagSchema.array().default([]).safeParse(data)
+				if (parsed.success) {
+					return parsed.data
+				}
+				console.error('Error parsing tags', parsed.error)
+				throw new Error('Error parsing tags')
+			},
+		})
+
+		console.log('tags', tags)
+
+		const {
+			data: syncedPost,
+			status: syncedPostStatus,
+			refetch: refetchSyncedPost,
+		} = useQuery<BasePost | null>({
+			queryKey: ['post', vscodePost?.id],
+			queryFn: async () => {
+				if (!vscodePost?.id) return null
+				const response = await fetch(
+					`${apiUrl}/api/posts?slug=${vscodePost?.id}`,
+					{
+						headers: {
+							Authorization: `Bearer ${token}`,
+						},
+					},
+				)
+				const data = await response.json()
+				return data
+			},
+		})
 
 		const {
 			data: videoResource,
-			status,
+			status: videoResourceStatus,
 			refetch,
 		} = useQuery({
-			queryKey: ['videoResource', currentVideoResourceId, token, post?.id],
+			queryKey: [
+				'videoResource',
+				currentVideoResourceId,
+				token,
+				syncedPost?.id,
+			],
 			queryFn: async () => {
-				console.log('queryFn', currentVideoResourceId, token, post?.id)
+				console.log('queryFn', currentVideoResourceId, token, syncedPost?.id)
 				if (currentVideoResourceId) {
 					const response = await fetch(
 						`${apiUrl}/api/videos/${currentVideoResourceId}`,
@@ -89,32 +141,8 @@ if (elm) {
 			retryDelay: 1000,
 		})
 
-		const { data: mp4Ready } = useQuery({
-			queryKey: ['mp4Ready', videoResource],
-			queryFn: async () => {
-				if (videoResource?.muxPlaybackId) {
-					console.log('fetching mp4')
-					const response = await fetch(
-						`https://stream.mux.com/${videoResource.muxPlaybackId}/high.mp4`,
-						{
-							method: 'HEAD',
-						},
-					)
-					console.log('response', response)
-					if (response.ok) {
-						return true
-					}
-					throw new Error('No mp4')
-				}
-				console.log('no muxPlaybackId')
-				throw new Error('No muxPlaybackId')
-			},
-			retry: true,
-			retryDelay: 5000,
-		})
-
 		console.log('videoResource', videoResource)
-		console.log('status', status)
+		console.log('videoResourceStatus', videoResourceStatus)
 
 		React.useEffect(() => {
 			console.log('App component mounted')
@@ -136,7 +164,7 @@ if (elm) {
 				switch (message.command) {
 					case 'post':
 						console.log('Received post data:', message.post)
-						setPost(message.post)
+						setVscodePost(message.post)
 						break
 					case 'token':
 						setToken(message.token)
@@ -149,15 +177,16 @@ if (elm) {
 		}, [])
 
 		console.log('Rendering App component')
-		console.log('Current post:', post)
+		console.log('Current post:', syncedPost)
 		console.log('Current token:', token)
 		console.log('Current apiUrl:', apiUrl)
 
-		const muxPlaybackId = post?.resources?.[0]?.resource?.fields?.muxPlaybackId
+		const muxPlaybackId =
+			syncedPost?.resources?.[0]?.resource?.fields?.muxPlaybackId
 		console.log('muxPlaybackId', muxPlaybackId)
 
 		React.useEffect(() => {
-			const incomingVideoResource = post?.resources?.find(
+			const incomingVideoResource = syncedPost?.resources?.find(
 				(resource) => resource.resource.type === 'videoResource',
 			)?.resource
 			setNewVideoResourceId(null)
@@ -166,7 +195,19 @@ if (elm) {
 			} else {
 				setCurrentVideoResourceId(null)
 			}
-		}, [post?.id])
+		}, [syncedPost?.id])
+
+		const { mutateAsync: updatePostTags } = useMutation({
+			mutationFn: async (tags: EggheadTag[]) => {
+				return await fetch(`${apiUrl}/api/tags/${syncedPost?.id}`, {
+					method: 'POST',
+					body: JSON.stringify(tags),
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				})
+			},
+		})
 
 		const ws = usePartySocket({
 			// usePartySocket takes the same arguments as PartySocket.
@@ -231,31 +272,68 @@ if (elm) {
 				mediaTheme.shadowRoot.appendChild(style)
 			}
 		}, [])
+
 		return (
 			<div className="p-3 font-bold">
-				<h1 className="text-4xl font-bold">
-					{post?.fields.title || 'No title'}
-				</h1>
-				{post && (
-					<a href={`${apiUrl}/${post.fields.slug}`} target="_blank">
-						open in browser
-					</a>
+				{syncedPostStatus === 'pending' ? (
+					<div className="space-y-4">
+						<div className="h-[48px] w-3/4 animate-pulse rounded-md bg-[var(--vscode-input-background)] opacity-50" />
+						<div className="h-[300px] animate-pulse rounded-md bg-[var(--vscode-input-background)] opacity-50" />
+					</div>
+				) : (
+					<>
+						<h1 className="text-4xl font-bold">
+							{syncedPost?.fields.title || 'Select a Post'}
+						</h1>
+						{syncedPost && (
+							<a href={`${apiUrl}/${syncedPost.fields.slug}`} target="_blank">
+								open in browser
+							</a>
+						)}
+						<div className="py-6">
+							<Video
+								videoResource={videoResource}
+								status={
+									videoResourceStatus === 'pending'
+										? 'pending'
+										: videoResourceStatus
+								}
+								newVideoResourceId={newVideoResourceId}
+								refetch={refetch}
+								postId={syncedPost?.id}
+								token={token}
+								apiUrl={apiUrl}
+								onUploaded={(videoId) => {
+									setNewVideoResourceId(videoId)
+									setCurrentVideoResourceId(videoId)
+								}}
+							/>
+						</div>
+						<div className="flex gap-3">
+							{syncedPost && (
+								<>
+									{tagsStatus === 'pending' || tags.length === 0 ? (
+										<div className="h-[38px] w-full animate-pulse rounded-md border border-[var(--vscode-input-border)] bg-[var(--vscode-input-background)] opacity-50" />
+									) : (
+										<AdvancedTagSelector
+											key={syncedPost.id}
+											availableTags={tags}
+											selectedTags={
+												syncedPost?.tags.map((tag) => tag.tag) || []
+											}
+											onChange={async (tags) => {
+												console.log('tags', tags)
+												const result = await updatePostTags(tags)
+												console.log('result', result)
+												refetchSyncedPost()
+											}}
+										/>
+									)}
+								</>
+							)}
+						</div>
+					</>
 				)}
-				<div className="py-6">
-					<Video
-						videoResource={videoResource}
-						status={status}
-						newVideoResourceId={newVideoResourceId}
-						refetch={refetch}
-						postId={post?.id}
-						token={token}
-						apiUrl={apiUrl}
-						onUploaded={(videoId) => {
-							setNewVideoResourceId(videoId)
-							setCurrentVideoResourceId(videoId)
-						}}
-					/>
-				</div>
 			</div>
 		)
 	}

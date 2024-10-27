@@ -14,7 +14,7 @@ export const EggheadDbTagSchema = z.object({
 	id: z.number(),
 	url: z.string().nullable(),
 	popularity_order: z.number().nullable(),
-	updated_at: z.date(),
+	updated_at: z.coerce.date(),
 })
 
 export const EggheadTagFieldsSchema = EggheadApiTagSchema.merge(
@@ -25,8 +25,8 @@ export const EggheadTagSchema = z.object({
 	id: z.string(),
 	type: z.literal('topic'),
 	fields: EggheadTagFieldsSchema,
-	createdAt: z.date().nullish(),
-	updatedAt: z.date().nullish(),
+	createdAt: z.coerce.date().nullish(),
+	updatedAt: z.coerce.date().nullish(),
 })
 
 export type EggheadTag = z.infer<typeof EggheadTagSchema>

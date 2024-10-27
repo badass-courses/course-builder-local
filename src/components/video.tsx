@@ -6,7 +6,7 @@ import VideoUploadForm from '../video-upload/video-upload-form'
 
 type VideoProps = {
 	videoResource: typeof VideoResourceSchema._type | null | undefined
-	status: 'error' | 'success' | string
+	status: 'error' | 'success' | 'pending'
 	newVideoResourceId: string | null
 	refetch: () => void
 	postId?: string
@@ -16,7 +16,7 @@ type VideoProps = {
 }
 
 type State = {
-	view: 'empty' | 'error' | 'processing' | 'ready' | 'upload'
+	view: 'empty' | 'error' | 'processing' | 'ready' | 'upload' | 'loading'
 	message: string
 }
 
@@ -26,6 +26,7 @@ type Action =
 	| { type: 'SET_PROCESSING'; message: string }
 	| { type: 'SET_READY' }
 	| { type: 'SET_UPLOAD' }
+	| { type: 'SET_LOADING' }
 
 function videoReducer(state: State, action: Action): State {
 	switch (action.type) {
@@ -39,6 +40,8 @@ function videoReducer(state: State, action: Action): State {
 			return { view: 'ready', message: '' }
 		case 'SET_UPLOAD':
 			return { view: 'upload', message: '' }
+		case 'SET_LOADING':
+			return { view: 'loading', message: 'Loading...' }
 		default:
 			return state
 	}
@@ -55,8 +58,8 @@ export function Video({
 	onUploaded,
 }: VideoProps) {
 	const [state, dispatch] = React.useReducer(videoReducer, {
-		view: 'upload',
-		message: 'No Video',
+		view: 'loading',
+		message: 'Loading...',
 	})
 
 	const { data: mp4Ready } = useQuery({
@@ -77,6 +80,13 @@ export function Video({
 	})
 
 	React.useEffect(() => {
+		console.log('STATUS:', status)
+		if (status === 'pending') {
+			console.log('SET_LOADING')
+			dispatch({ type: 'SET_LOADING' })
+			return
+		}
+
 		if (!videoResource) {
 			if (status === 'error') {
 				dispatch({ type: 'SET_ERROR', message: 'error loading video' })
@@ -120,6 +130,12 @@ export function Video({
 
 	const renderContent = () => {
 		switch (state.view) {
+			case 'loading':
+				return (
+					<div className="bg-muted flex h-full w-full animate-pulse items-center justify-center rounded-md">
+						<div className="text-muted-foreground">Loading...</div>
+					</div>
+				)
 			case 'ready':
 				return (
 					<div className="relative h-full w-full">
