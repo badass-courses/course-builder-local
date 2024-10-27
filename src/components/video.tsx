@@ -62,7 +62,7 @@ export function Video({
 		message: 'Loading...',
 	})
 
-	const { data: mp4Ready } = useQuery({
+	const { data: mp4Ready, isLoading: mp4ReadyLoading } = useQuery({
 		queryKey: ['mp4Ready', videoResource],
 		queryFn: async () => {
 			if (videoResource?.muxPlaybackId) {
@@ -80,9 +80,7 @@ export function Video({
 	})
 
 	React.useEffect(() => {
-		console.log('STATUS:', status)
 		if (status === 'pending') {
-			console.log('SET_LOADING')
 			dispatch({ type: 'SET_LOADING' })
 			return
 		}
@@ -102,6 +100,8 @@ export function Video({
 			case 'ready':
 				if (mp4Ready) {
 					dispatch({ type: 'SET_READY' })
+				} else if (mp4ReadyLoading) {
+					dispatch({ type: 'SET_LOADING' })
 				} else {
 					dispatch({ type: 'SET_PROCESSING', message: 'final encoding' })
 				}
@@ -126,7 +126,7 @@ export function Video({
 				})
 				break
 		}
-	}, [videoResource, status, newVideoResourceId, mp4Ready])
+	}, [videoResource, status, newVideoResourceId, mp4Ready, mp4ReadyLoading])
 
 	const renderContent = () => {
 		switch (state.view) {
@@ -149,7 +149,7 @@ export function Video({
 						/>
 						<button
 							onClick={() => dispatch({ type: 'SET_UPLOAD' })}
-							className="bg-primary text-primary-foreground absolute right-2 top-2 rounded-md px-2 py-1 text-sm"
+							className="absolute right-2 top-2 rounded-md bg-primary px-2 py-1 text-sm text-primary-foreground"
 						>
 							Replace
 						</button>
