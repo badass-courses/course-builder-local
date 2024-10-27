@@ -3,7 +3,7 @@
 		"module": "NodeNext",
 		"target": "ES2022",
 		"lib": ["ES2022", "DOM"],
-		"jsx": "react",
+		"jsx": "react-jsx",
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true /* enable all strict type-checking options */

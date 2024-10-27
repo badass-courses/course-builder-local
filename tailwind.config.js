@@ -5,19 +5,89 @@ module.exports = {
 	theme: {
 		extend: {
 			colors: {
-				'vscode-editor': 'var(--vscode-editor-background)',
-				'vscode-foreground': 'var(--vscode-foreground)',
-				'vscode-button-background': 'var(--vscode-button-background)',
-				'vscode-button-foreground': 'var(--vscode-button-foreground)',
-				'vscode-button-border': 'var(--vscode-button-border)',
-				'vscode-button-hoverBackground': 'var(--vscode-button-hoverBackground)',
-				'vscode-errorForeground': 'var(--vscode-errorForeground)',
-				'vscode-progressBar-background': 'var(--vscode-progressBar-background)',
-				'vscode-progressBar-foreground': 'var(--vscode-progressBar-foreground)',
-				'vscode-textLink-foreground': 'var(--vscode-textLink-foreground)',
+				// Core VSCode colors
+				background: 'var(--vscode-editor-background)',
+				foreground: 'var(--vscode-editor-foreground)',
+
+				// UI Elements
+				'ui-border': 'var(--vscode-editorWidget-border)',
+				'ui-shadow': 'var(--vscode-widget-shadow)',
+
+				// Interactive elements
+				primary: {
+					DEFAULT: 'var(--vscode-button-background)',
+					foreground: 'var(--vscode-button-foreground)',
+					hover: 'var(--vscode-button-hoverBackground)',
+					border: 'var(--vscode-button-border)',
+				},
+				secondary: {
+					DEFAULT: 'var(--vscode-button-secondaryBackground)',
+					foreground: 'var(--vscode-button-secondaryForeground)',
+					hover: 'var(--vscode-button-secondaryHoverBackground)',
+				},
+
+				// Form elements
+				input: {
+					DEFAULT: 'var(--vscode-input-background)',
+					foreground: 'var(--vscode-input-foreground)',
+					border: 'var(--vscode-input-border)',
+					placeholder: 'var(--vscode-input-placeholderForeground)',
+				},
+
+				// Status/feedback colors
+				error: {
+					DEFAULT: 'var(--vscode-errorForeground)',
+					background: 'var(--vscode-inputValidation-errorBackground)',
+					border: 'var(--vscode-inputValidation-errorBorder)',
+				},
+				warning: {
+					DEFAULT: 'var(--vscode-editorWarning-foreground)',
+					background: 'var(--vscode-inputValidation-warningBackground)',
+					border: 'var(--vscode-inputValidation-warningBorder)',
+				},
+				info: {
+					DEFAULT: 'var(--vscode-editorInfo-foreground)',
+					background: 'var(--vscode-inputValidation-infoBackground)',
+					border: 'var(--vscode-inputValidation-infoBorder)',
+				},
+
+				// Link colors
+				link: {
+					DEFAULT: 'var(--vscode-textLink-foreground)',
+					active: 'var(--vscode-textLink-activeForeground)',
+				},
+
+				// Progress indicators
+				progress: {
+					background: 'var(--vscode-progressBar-background)',
+					foreground: 'var(--vscode-progressBar-foreground)',
+				},
+
+				// New colors
+				destructive: {
+					DEFAULT: 'hsl(var(--destructive))',
+					foreground: 'hsl(var(--destructive-foreground))',
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))',
+				},
 			},
+
+			// Typography
+			fontFamily: {
+				sans: ['var(--vscode-font-family)'],
+				mono: ['var(--vscode-editor-font-family)'],
+			},
+			fontSize: {
+				base: 'var(--vscode-font-size)',
+				code: 'var(--vscode-editor-font-size)',
+			},
+
+			// Animations
 			animation: {
 				'reverse-spin': 'reverse-spin 1s linear infinite',
+				progress: 'progress 2s ease infinite',
 			},
 			keyframes: {
 				'reverse-spin': {
@@ -25,15 +95,23 @@ module.exports = {
 						transform: 'rotate(360deg)',
 					},
 				},
-				'vscode-loader': {
-					'0%': { left: '0', width: '30px' },
-					'25%': { width: '50px' },
-					'50%': { width: '20px' },
-					'75%': { width: '50px' },
-					'100%': { width: '20px', left: '100%' },
+				progress: {
+					'0%': { left: '0', width: '0%' },
+					'50%': { width: '50%' },
+					'100%': { left: '100%', width: '0%' },
 				},
+			},
+
+			// Border radius
+			borderRadius: {
+				DEFAULT: 'var(--radius)',
 			},
 		},
 	},
-	plugins: [require('@tailwindcss/forms'), require('tailwindcss-animate')],
+	plugins: [
+		require('@tailwindcss/typography'),
+		require('tailwind-scrollbar'),
+		require('tailwindcss-radix'),
+		require('tailwindcss-animate'),
+	],
 }

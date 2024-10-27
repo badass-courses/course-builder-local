@@ -11,6 +11,7 @@ import {
 	QueryClientProvider,
 } from '@tanstack/react-query'
 import { VideoResourceSchema } from './schemas/video-resource'
+import { Video } from '../components/video'
 
 const elm = document.querySelector('#app')
 
@@ -241,81 +242,20 @@ if (elm) {
 					</a>
 				)}
 				<div className="py-6">
-					<div className="bg-muted flex aspect-video h-full w-full items-center justify-center p-5">
-						{videoResource ? (
-							<>
-								{videoResource.state === 'ready' && (
-									<>
-										{videoResource.muxPlaybackId && mp4Ready && (
-											<MuxPlayer
-												preferPlayback="mse"
-												src={`https://stream.mux.com/${videoResource.muxPlaybackId}/high.mp4`}
-												onError={(e) => {
-													console.error('MuxPlayer error:', e)
-													refetch()
-												}}
-											/>
-										)}
-										{!mp4Ready && (
-											<div className="text-muted-foreground text-center">
-												video loading
-											</div>
-										)}
-									</>
-								)}
-								{videoResource.state === 'new' && (
-									<div className="text-muted-foreground text-center">
-										video is processing
-									</div>
-								)}
-								{videoResource.state === 'processing' && (
-									<div className="text-muted-foreground text-center">
-										video is processing
-									</div>
-								)}
-								{videoResource.state === 'preparing' && (
-									<div className="text-muted-foreground text-center">
-										video is preparing
-									</div>
-								)}
-								{videoResource.state === 'errored' && (
-									<div className="text-muted-foreground text-center">
-										video is errored, try again
-									</div>
-								)}
-							</>
-						) : (
-							<>
-								{status === 'success' ? (
-									<div className="text-muted-foreground text-center">
-										No Video
-									</div>
-								) : null}
-								{status === 'error' ? (
-									<div className="text-muted-foreground text-center">
-										error loading video
-									</div>
-								) : null}
-							</>
-						)}
-						{newVideoResourceId && !videoResource && (
-							<div className="text-muted-foreground text-center">
-								video is processing
-							</div>
-						)}
-					</div>
+					<Video
+						videoResource={videoResource}
+						status={status}
+						newVideoResourceId={newVideoResourceId}
+						refetch={refetch}
+						postId={post?.id}
+						token={token}
+						apiUrl={apiUrl}
+						onUploaded={(videoId) => {
+							setNewVideoResourceId(videoId)
+							setCurrentVideoResourceId(videoId)
+						}}
+					/>
 				</div>
-
-				<VideoUploadForm
-					postId={post?.id}
-					token={token}
-					apiUrl={apiUrl}
-					isReplacement={videoResource?.muxPlaybackId ? true : false}
-					onUploaded={(videoId) => {
-						setNewVideoResourceId(videoId)
-						setCurrentVideoResourceId(videoId)
-					}}
-				/>
 			</div>
 		)
 	}

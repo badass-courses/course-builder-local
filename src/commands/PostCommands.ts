@@ -1,11 +1,9 @@
 import * as vscode from 'vscode'
 import matter from 'gray-matter'
-import { URI } from 'vscode-uri'
 
 import { createPost, fetchPosts, publishPost, updatePost } from '../lib/posts'
 import { PostsProvider } from '../postsProvider'
 import { Post } from '../types'
-import { getAuthenticatedClient } from '../auth'
 import { tokenForContext } from '../lib/token-for-context'
 import { TEMP_SCHEME } from '../config'
 import { extensionEvents } from '../lib/eventEmitter'

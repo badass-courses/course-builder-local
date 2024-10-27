@@ -22,8 +22,14 @@ export class TempFileSystemProvider implements vscode.FileSystemProvider {
 		}
 	}
 
+	// Add path validation
 	private _getFilePath(uri: vscode.Uri): string {
-		return path.join(this._baseDir, uri.path)
+		const normalized = path.normalize(path.join(this._baseDir, uri.path))
+		// Prevent directory traversal attacks
+		if (!normalized.startsWith(this._baseDir)) {
+			throw vscode.FileSystemError.FileNotFound(uri)
+		}
+		return normalized
 	}
 
 	watch(uri: vscode.Uri): vscode.Disposable {
@@ -32,10 +38,9 @@ export class TempFileSystemProvider implements vscode.FileSystemProvider {
 	}
 
 	stat(uri: vscode.Uri): vscode.FileStat {
-		this.ensureBaseDir()
-		console.log('Stat called for:', uri.toString())
-		const filePath = this._getFilePath(uri)
 		try {
+			this.ensureBaseDir()
+			const filePath = this._getFilePath(uri)
 			const stats = fs.statSync(filePath)
 			return {
 				type: stats.isFile() ? vscode.FileType.File : vscode.FileType.Directory,
@@ -44,10 +49,10 @@ export class TempFileSystemProvider implements vscode.FileSystemProvider {
 				size: stats.size,
 			}
 		} catch (error) {
-			if ((error as { code?: string }).code === 'ENOENT') {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
 				throw vscode.FileSystemError.FileNotFound(uri)
 			}
-			throw error
+			throw vscode.FileSystemError.Unavailable(uri)
 		}
 	}
 
@@ -81,23 +86,53 @@ export class TempFileSystemProvider implements vscode.FileSystemProvider {
 		content: Uint8Array,
 		options: { create: boolean; overwrite: boolean },
 	): void {
-		console.log(
-			'Writing file:',
-			uri.toString(),
-			'Content length:',
-			content.length,
-		)
 		const filePath = this._getFilePath(uri)
-		fs.writeFileSync(filePath, content)
-		this._emitter.fire([{ type: vscode.FileChangeType.Changed, uri }])
-		console.log('File written successfully:', uri.toString())
+		const tempPath = `${filePath}.tmp`
+
+		try {
+			// Write to temp file first
+			fs.writeFileSync(tempPath, content)
+
+			// Check if target exists when create=false or overwrite=false
+			if ((!options.create || !options.overwrite) && fs.existsSync(filePath)) {
+				fs.unlinkSync(tempPath)
+				throw vscode.FileSystemError.FileExists(uri)
+			}
+
+			// Atomic rename
+			fs.renameSync(tempPath, filePath)
+			this._emitter.fire([{ type: vscode.FileChangeType.Changed, uri }])
+		} catch (error) {
+			// Clean up temp file if it exists
+			try {
+				fs.unlinkSync(tempPath)
+			} catch {}
+
+			if (
+				(error as NodeJS.ErrnoException).code === 'ENOENT' &&
+				!options.create
+			) {
+				throw vscode.FileSystemError.FileNotFound(uri)
+			}
+			throw error
+		}
 	}
 
-	delete(uri: vscode.Uri): void {
-		console.log('Deleting file:', uri.toString())
+	delete(uri: vscode.Uri, options?: { recursive?: boolean }): void {
 		const filePath = this._getFilePath(uri)
-		fs.unlinkSync(filePath)
-		console.log('File deleted:', uri.toString())
+		try {
+			if (options?.recursive) {
+				fs.rmSync(filePath, { recursive: true, force: true })
+			} else {
+				fs.unlinkSync(filePath)
+			}
+			this._emitter.fire([{ type: vscode.FileChangeType.Deleted, uri }])
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+				throw vscode.FileSystemError.FileNotFound(uri)
+			}
+			throw vscode.FileSystemError.Unavailable(uri)
+		}
 	}
 
 	rename(oldUri: vscode.Uri, newUri: vscode.Uri): void {

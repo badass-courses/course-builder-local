@@ -2,17 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-media-theme::part(host) {
-	visibility: visible !important;
+@layer base {
+	:root {
+		/* Layout variables */
+		--nav-height: 3.5rem;
+		--command-bar-height: 2.25rem;
+		--pane-layout-height: calc(
+			100vh - var(--nav-height) - var(--command-bar-height)
+		);
+		--code-editor-layout-height: calc(
+			100vh - var(--nav-height) - var(--command-bar-height) - 30px
+		);
+
+		/* VSCode theme integration */
+		--background: var(--vscode-editor-background);
+		--foreground: var(--vscode-editor-foreground);
+
+		/* Interactive elements */
+		--primary: var(--vscode-button-background);
+		--primary-foreground: var(--vscode-button-foreground);
+
+		--secondary: var(--vscode-button-secondaryBackground);
+		--secondary-foreground: var(--vscode-button-secondaryForeground);
+
+		--muted: var(--vscode-editorWidget-background);
+		--muted-foreground: var(--vscode-descriptionForeground);
+
+		--accent: var(--vscode-textLink-foreground);
+		--accent-foreground: var(--vscode-textLink-activeForeground);
+
+		/* Destructive actions */
+		--destructive: var(--vscode-errorForeground);
+		--destructive-foreground: var(--vscode-inputValidation-errorBackground);
+
+		/* Borders and inputs */
+		--border: var(--vscode-editorWidget-border);
+		--input: var(--vscode-input-background);
+		--ring: var(--vscode-focusBorder);
+
+		/* Component radius */
+		--radius: 0.375rem;
+	}
 }
 
-/* Alternative approach */
-media-theme > :first-child {
-	visibility: visible !important;
+@layer components {
+	/* Media player customization */
+	mux-player {
+		--seek-backward-button: none;
+		--seek-forward-button: none;
+		--fullscreen-button: none;
+
+		@apply aspect-video h-auto w-full overflow-hidden;
+	}
+
+	/* Media theme visibility fixes */
+	media-theme::part(host) {
+		visibility: visible !important;
+	}
+
+	media-theme > :first-child {
+		visibility: visible !important;
+	}
 }
 
-mux-player {
-	--seek-backward-button: none;
-	--seek-forward-button: none;
-	--fullscreen-button: none;
+@layer utilities {
+	/* Add any custom utilities here */
+	.vscode-light {
+		color-scheme: light;
+	}
+
+	.vscode-dark {
+		color-scheme: dark;
+	}
 }

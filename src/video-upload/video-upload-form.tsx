@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useFileChange } from './use-file-change'
 import { uploadToS3 } from './upload-to-s3'
+import { Button, Progress } from '@coursebuilder/ui'
 
 const VideoUploadForm = ({
 	postId,
@@ -10,12 +11,16 @@ const VideoUploadForm = ({
 	apiUrl,
 	isReplacement,
 	onUploaded,
+	onProgress = () => {},
+	onCancel,
 }: {
 	postId?: string
 	token?: string | null
 	apiUrl: string | null
 	isReplacement: boolean
 	onUploaded: (videoId: string) => void
+	onProgress?: (progress: number) => void
+	onCancel?: () => void
 }) => {
 	const {
 		fileError,
@@ -25,7 +30,6 @@ const VideoUploadForm = ({
 		fileDispatch,
 		handleFileChange,
 	} = useFileChange()
-	const [s3FileUrl, setS3FileUrl] = React.useState('')
 	const [uploadProgress, setUploadProgress] = React.useState(0)
 	const [isUploading, setIsUploading] = React.useState(false)
 
@@ -35,7 +39,7 @@ const VideoUploadForm = ({
 			if (fileType && fileContents) {
 				setIsUploading(true)
 				setUploadProgress(0)
-				const { publicUrl, filename, objectName } = await uploadToS3({
+				const { publicUrl, objectName } = await uploadToS3({
 					fileType,
 					fileContents,
 					onUploadProgress: (progressEvent) => {
@@ -43,14 +47,11 @@ const VideoUploadForm = ({
 							? Math.round((progressEvent.loaded / progressEvent.total) * 100)
 							: 0
 						setUploadProgress(progress)
+						onProgress(progress)
 					},
 					signingUrl: `${apiUrl}/api/uploads/signed-url`,
 					token,
 				})
-
-				fileDispatch({ type: 'RESET_FILE_STATE' })
-				setS3FileUrl(publicUrl)
-				setIsUploading(false)
 
 				await fetch(`${apiUrl}/api/uploads/new`, {
 					method: 'POST',
@@ -75,68 +76,77 @@ const VideoUploadForm = ({
 		}
 	}
 
-	return postId && token && apiUrl ? (
-		<div className="bg-vscode-editor p-4 text-vscode-foreground">
-			<form onSubmit={handleSubmit} className="space-y-4">
-				<div>
-					<label htmlFor="video" className="mb-2 block font-semibold">
-						{isReplacement ? 'Replace video' : 'Upload a video'}
-					</label>
+	if (!postId || !token || !apiUrl) return null
+
+	if (isUploading) {
+		return (
+			<div className="flex h-full w-full flex-col items-center justify-center space-y-6">
+				<div className="w-full max-w-md space-y-4">
+					<div className="flex items-center justify-between">
+						<span className="text-sm font-medium">Uploading {fileName}</span>
+						<span className="text-muted-foreground text-sm">
+							{uploadProgress}%
+						</span>
+					</div>
+					<Progress value={uploadProgress} className="h-2" />
+				</div>
+			</div>
+		)
+	}
+
+	return (
+		<div className="flex h-full w-full flex-col items-center justify-center">
+			<div className="w-full max-w-md space-y-6">
+				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="relative">
-						<input
-							type="file"
-							accept="video/*"
-							id="video"
-							name="video"
-							onChange={handleFileChange}
-							className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-						/>
-						<div className="rounded border border-vscode-button-border bg-vscode-button-background px-4 py-2 text-vscode-button-foreground">
-							{fileName || 'Choose file...'}
+						<Button
+							type="button"
+							variant="outline"
+							className="relative w-full overflow-hidden px-6 py-2"
+						>
+							<input
+								type="file"
+								accept="video/*"
+								id="video"
+								name="video"
+								onChange={handleFileChange}
+								className="absolute inset-0 cursor-pointer opacity-0"
+							/>
+							{fileName ||
+								(isReplacement ? 'Select new video' : 'Select video')}
+						</Button>
+					</div>
+
+					{fileName && !fileError && (
+						<div className="flex gap-3">
+							<Button
+								type="submit"
+								className="bg-primary hover:bg-primary/90 flex-1 px-6 py-2"
+							>
+								Upload
+							</Button>
+							{isReplacement && onCancel && (
+								<Button
+									type="button"
+									variant="outline"
+									onClick={onCancel}
+									className="hover:bg-secondary/10 border-2 px-6 py-2"
+								>
+									Cancel
+								</Button>
+							)}
 						</div>
+					)}
+				</form>
+
+				{fileError && (
+					<div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+						{fileError}
 					</div>
-				</div>
-				<button
-					disabled={!fileContents || isUploading}
-					type="submit"
-					className={`w-full rounded px-4 py-2 ${
-						!fileContents || isUploading
-							? 'cursor-not-allowed bg-vscode-button-background opacity-50'
-							: 'bg-vscode-button-background hover:bg-vscode-button-hoverBackground'
-					} text-vscode-button-foreground`}
-				>
-					{isUploading ? 'Uploading...' : 'Upload to Builder'}
-				</button>
-			</form>
-			{fileError && (
-				<div className="mt-4 text-vscode-errorForeground">{fileError}</div>
-			)}
-			{isUploading && (
-				<div className="mt-4">
-					<div className="h-2.5 w-full rounded-full bg-vscode-progressBar-background">
-						<div
-							className="h-2.5 rounded-full bg-vscode-progressBar-foreground transition-all duration-300 ease-in-out"
-							style={{ width: `${uploadProgress}%` }}
-						></div>
-					</div>
-					<span className="mt-1 inline-block text-sm">{uploadProgress}%</span>
-				</div>
-			)}
-			{s3FileUrl && (
-				<div className="mt-4 space-y-2">
-					<span className="block">Upload successful!</span>
-					<a
-						href={s3FileUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-vscode-textLink-foreground hover:underline"
-					>
-						View uploaded video
-					</a>
-				</div>
-			)}
+				)}
+			</div>
 		</div>
-	) : null
+	)
 }
 
 export default VideoUploadForm
