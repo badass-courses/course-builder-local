@@ -193,7 +193,7 @@
 		"@types/react": "latest",
 		"@types/react-dom": "latest",
 		"@types/shortid": "^0.0.32",
-		"axios": "^1.7.7",
+		"axios": "^1.16.1",
 		"esbuild": "^0.17.0",
 		"esbuild-server": "^0.3.0",
 		"gray-matter": "^4.0.3",
